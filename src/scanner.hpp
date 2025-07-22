@@ -24,7 +24,7 @@ enum class TokenType {
     Eof
 };
 
-std::ostream& operator<<(std::ostream& os, TokenType type) {
+inline std::ostream& operator<<(std::ostream& os, TokenType type) {
     switch (type) {
         case TokenType::LeftParen:    return os << "LeftParen";
         case TokenType::RightParen:   return os << "RightParen";
@@ -97,7 +97,7 @@ public:
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const Token& token) {
-    stream << "[Token " << token.type() << ", \"" << token.lexeme() << "\"]";
+    return stream << "[Token " << token.type() << ", \"" << token.lexeme() << "\"]";
 }
 
 class Scanner {
@@ -115,7 +115,7 @@ public:
 
 private:
     bool is_at_end() const {
-        return m_line >= m_source.length();
+        return std::size_t(m_current) >= m_source.length();
     }
 
     char advance() {
@@ -129,7 +129,9 @@ private:
 
     bool match(char ch) {
         if (is_at_end()) return false;
-        return peek() == ch;
+        if (peek() != ch) return false;
+        advance();
+        return true;
     }
 
     void add_token(TokenType type);

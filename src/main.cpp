@@ -2,9 +2,14 @@
 #include <fstream>
 #include <string>
 #include "lox.hpp"
+#include "scanner.hpp"
 
 static void run(const std::string& source) {
-
+    auto scanner = Scanner(source);
+    auto tokens = scanner.tokenize();
+    for (const auto& token : tokens) {
+        std::cout << *token << '\n';
+    }
 }
 
 static void run_repl() {
@@ -15,6 +20,7 @@ static void run_repl() {
         if (line == "exit") {
             break;
         }
+        run(line);
     }
 }
 
@@ -22,7 +28,7 @@ static void run_file(const std::string& path) {
     std::ifstream input_file(path);
     std::string line;
     while (std::getline(input_file, line)) {
-        
+        run(line);
     }
     if (lox::had_error())
         std::exit(65);
