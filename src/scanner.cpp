@@ -102,7 +102,7 @@ void Scanner::scan_token() {
                 break;
             }
 
-            lox::error(m_line, "Unexpected token: " + ch);
+            lox::error(m_line, "Unexpected token: " + std::string { ch });
             break;
         }
     }
