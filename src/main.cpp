@@ -3,6 +3,7 @@
 #include <string>
 #include "lox.hpp"
 #include "scanner.hpp"
+#include "parser.hpp"
 
 static void run(const std::string& source) {
     auto scanner = Scanner(source);
