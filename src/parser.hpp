@@ -46,7 +46,7 @@ public:
 };
 
 inline void Expr::Binary::print(std::ostream& stream) const { 
-    stream << "(" << operator_().lexeme() << " " <<left() << " " << right() << ')';
+    stream << "(" << left() << " " << operator_().lexeme() << " "  << right() << ')';
 }
 
 class Expr::Unary : public Expr {
