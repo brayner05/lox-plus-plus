@@ -229,4 +229,17 @@ private:
     void synchronize();
 };
 
+class AstPrinter {
+private:
+    std::ostream& m_stream;
+
+public:
+    AstPrinter(std::ostream& stream) : m_stream(stream) {}
+
+    void print(const Expr& root) {
+        root.print(m_stream);
+        std::cout << '\n';
+    }
+};
+
 #endif
