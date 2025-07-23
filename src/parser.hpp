@@ -162,7 +162,11 @@ public:
     Parser(std::vector<std::unique_ptr<Token>> tokens) : m_tokens(std::move(tokens)) {}
 
     std::unique_ptr<Expr> parse() {
-        return expr();
+        try {
+            return expr();
+        } catch (const ParseError& parse_error) {
+            return nullptr;
+        }
     }
 
 private:
