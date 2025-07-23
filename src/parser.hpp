@@ -138,6 +138,11 @@ inline void Expr::Literal<T>::print(std::ostream& stream) const {
     stream << value();
 }
 
+template <>
+inline void Expr::Literal<bool>::print(std::ostream& stream) const {
+    stream << (value() ? "true" : "false");
+}
+
 class Expr::Identifier : public Expr::Literal<std::string> {
     using Expr::Literal<std::string>::Literal;
 };
@@ -205,13 +210,19 @@ private:
 
     std::unique_ptr<Expr> expr();
     std::unique_ptr<Expr> ternary();
+    std::unique_ptr<Expr> validate_equality();
     std::unique_ptr<Expr> equality();
-    std::unique_ptr<Expr> compound_expr();
+    std::unique_ptr<Expr> validate_compound();
+    std::unique_ptr<Expr> compound();
+    std::unique_ptr<Expr> validate_comparison();
     std::unique_ptr<Expr> comparison();
+    std::unique_ptr<Expr> validate_term();
     std::unique_ptr<Expr> term();
+    std::unique_ptr<Expr> validate_factor();
     std::unique_ptr<Expr> factor();
     std::unique_ptr<Expr> unary();
     std::unique_ptr<Expr> primary();
+    void synchronize();
 };
 
 #endif

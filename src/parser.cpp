@@ -7,7 +7,7 @@ std::unique_ptr<Expr> Parser::expr() {
 }
 
 std::unique_ptr<Expr> Parser::ternary() {
-    auto condition = equality();
+    auto condition = validate_equality();
     if (!match({ TokenType::QuestionMark })) return condition;
 
     auto operator_1 = previous();
@@ -27,12 +27,19 @@ std::unique_ptr<Expr> Parser::ternary() {
     );
 }
 
+std::unique_ptr<Expr> Parser::validate_equality() {
+    if (match({ TokenType::EqualEqual, TokenType::BangEqual }))
+        throw error(peek(), "Expected an expression");
+
+    return equality();
+}
+
 std::unique_ptr<Expr> Parser::equality() {
-    auto left = compound_expr();
+    auto left = validate_compound();
 
     while (match({ TokenType::BangEqual, TokenType::EqualEqual })) {
         auto& operation = previous();
-        auto right = compound_expr();
+        auto right = validate_compound();
         left = std::make_unique<Expr::Binary>(
             std::move(left), 
             std::make_unique<Token>(operation), 
@@ -43,12 +50,17 @@ std::unique_ptr<Expr> Parser::equality() {
     return left;
 }
 
-std::unique_ptr<Expr> Parser::compound_expr() {
-    auto left = comparison();
+std::unique_ptr<Expr> Parser::validate_compound() {
+    if (match({ TokenType::Comma })) throw error(peek(), "Expected an expression.");
+    return compound();
+}
+
+std::unique_ptr<Expr> Parser::compound() {
+    auto left = validate_comparison();
 
     while (match({ TokenType::Comma })) {
         auto& operation = previous();
-        auto right = comparison();
+        auto right = validate_comparison();
         left = std::make_unique<Expr::Binary>(
             std::move(left), 
             std::make_unique<Token>(operation), 
@@ -57,6 +69,13 @@ std::unique_ptr<Expr> Parser::compound_expr() {
     }
 
     return left;
+}
+
+std::unique_ptr<Expr> Parser::validate_comparison() {
+    if (match({ TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual }))
+        throw error(peek(), "Expected an expression.");
+    
+    return comparison();
 }
 
 std::unique_ptr<Expr> Parser::comparison() {
@@ -75,12 +94,17 @@ std::unique_ptr<Expr> Parser::comparison() {
     return left;
 }
 
+std::unique_ptr<Expr> Parser::validate_term() {
+    if (match({ TokenType::Plus, TokenType::Minus })) throw error(peek(), "Expected an expression.");
+    return term();
+}
+
 std::unique_ptr<Expr> Parser::term() {
-    auto left = factor();
+    auto left = validate_factor();
 
     while (match({ TokenType::Plus, TokenType::Minus })) {
         auto& operation = previous();
-        auto right = factor();
+        auto right = validate_factor();
         left = std::make_unique<Expr::Binary>(
             std::move(left), 
             std::make_unique<Token>(operation), 
@@ -89,6 +113,11 @@ std::unique_ptr<Expr> Parser::term() {
     }
 
     return left;
+}
+
+std::unique_ptr<Expr> Parser::validate_factor() {
+    if (match({ TokenType::Star, TokenType::Slash })) throw error(peek(), "Expected an expression.");
+    return factor();
 }
 
 std::unique_ptr<Expr> Parser::factor() {
@@ -145,4 +174,22 @@ std::unique_ptr<Expr> Parser::primary() {
     }
 
     throw error(peek(), "Expected an expression.");
+}
+
+void Parser::synchronize() {
+    advance();
+    while (!is_at_end()) {
+        if (previous().type() == TokenType::Semicolon) return;
+
+        switch (peek().type()) {
+            case TokenType::Class: case TokenType::For: case TokenType::Fun:
+            case TokenType::If: case TokenType::Print: case TokenType::Return:
+            case TokenType::Var: case TokenType::While:
+                return;
+                
+            default: break;
+        }
+
+        advance();
+    }
 }

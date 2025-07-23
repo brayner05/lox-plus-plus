@@ -20,7 +20,7 @@ enum class TokenType {
     Identifier, String, Number,
   
     And, Class, Else, False, Fun, For, If, Nil, Or,
-    Print, Return, Super, This, True, While,
+    Print, Return, Super, This, True, Var, While,
   
     Eof
 };
@@ -68,6 +68,7 @@ inline std::ostream& operator<<(std::ostream& os, TokenType type) {
         case TokenType::Super:        return os << "Super";
         case TokenType::This:         return os << "This";
         case TokenType::True:         return os << "True";
+        case TokenType::Var:          return os << "Var";
         case TokenType::While:        return os << "While";
 
         case TokenType::Eof:          return os << "Eof";

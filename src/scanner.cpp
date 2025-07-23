@@ -20,6 +20,7 @@ std::map<std::string, TokenType> Scanner::keywords {
     { "super", TokenType::Super },
     { "this", TokenType::This },
     { "true", TokenType::True },
+    { "var", TokenType::Var },
     { "while", TokenType::While }
 };
 
