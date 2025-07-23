@@ -12,6 +12,7 @@ struct Expr {
     class Unary;
     template <typename T>
     class Literal;
+    class Identifier;
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const Expr& expr) { 
@@ -92,7 +93,17 @@ inline void Expr::Literal<T>::print(std::ostream& stream) const {
     stream << value();
 }
 
+class Expr::Identifier : public Expr::Literal<std::string> {
+    using Expr::Literal<std::string>::Literal;
+};
+
 class Parser {
+public:
+    class ParseError : public std::runtime_error {
+    public:
+        ParseError(const std::string& message) : std::runtime_error(message) {}
+    };
+
 private:
     std::vector<std::unique_ptr<Token>> m_tokens;
     int m_position { 0 };
@@ -142,9 +153,9 @@ private:
         throw error(peek(), message);
     }
 
-    std::runtime_error error(const Token& token, const std::string& message) {
+    ParseError error(const Token& token, const std::string& message) {
         lox::error(token, message);
-        return std::runtime_error("");
+        return ParseError(message);
     }
 
     std::unique_ptr<Expr> equality();

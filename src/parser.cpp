@@ -94,6 +94,9 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<Expr::Literal<std::string>>(lexeme.substr(1, lexeme.length() - 2));
     }
 
+    if (match({ TokenType::Identifier }))
+        return std::make_unique<Expr::Identifier>(previous().lexeme());
+
     if (match({ TokenType::LeftParen })) {
         auto expression = equality();
         consume(TokenType::RightParen, "Expected ')' after expression.");
