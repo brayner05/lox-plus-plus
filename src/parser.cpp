@@ -2,10 +2,30 @@
 #include "parser.hpp"
 #include "lox.hpp"
 
+std::unique_ptr<Expr> Parser::expr() {
+    return equality();
+}
+
 std::unique_ptr<Expr> Parser::equality() {
-    auto left = comparison();
+    auto left = compound_expr();
 
     while (match({ TokenType::BangEqual, TokenType::EqualEqual })) {
+        auto& operation = previous();
+        auto right = compound_expr();
+        left = std::make_unique<Expr::Binary>(
+            std::move(left), 
+            std::make_unique<Token>(operation), 
+            std::move(right)
+        );
+    }
+
+    return left;
+}
+
+std::unique_ptr<Expr> Parser::compound_expr() {
+    auto left = comparison();
+
+    while (match({ TokenType::Comma })) {
         auto& operation = previous();
         auto right = comparison();
         left = std::make_unique<Expr::Binary>(

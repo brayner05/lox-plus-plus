@@ -112,7 +112,7 @@ public:
     Parser(std::vector<std::unique_ptr<Token>> tokens) : m_tokens(std::move(tokens)) {}
 
     std::unique_ptr<Expr> parse() {
-        return equality();
+        return expr();
     }
 
 private:
@@ -158,7 +158,9 @@ private:
         return ParseError(message);
     }
 
+    std::unique_ptr<Expr> expr();
     std::unique_ptr<Expr> equality();
+    std::unique_ptr<Expr> compound_expr();
     std::unique_ptr<Expr> comparison();
     std::unique_ptr<Expr> term();
     std::unique_ptr<Expr> factor();
