@@ -2,24 +2,33 @@
 #define PARSER_HPP
 
 #include <string>
+#include <sstream>
 #include "lox.hpp"
 #include "scanner.hpp"
 
 struct Expr {
-    virtual ~Expr() = default;
-    virtual void print(std::ostream& stream) const = 0;
-    class Ternary;
-    class Binary;
-    class Unary;
-    template <typename T>
-    class Literal;
-    class Identifier;
-};
+    /// Type denoting the type of expression.
+    enum class Type { Ternary, Binary, Unary, Literal, Identifier };
 
-inline std::ostream& operator<<(std::ostream& stream, const Expr& expr) { 
-    expr.print(stream);
-    return stream; 
-}
+    /// Ternary expression.
+    class Ternary;
+
+    /// Binary expression.
+    class Binary;
+
+    /// Unary expression.
+    class Unary;
+
+    /// Identifier expression.
+    class Identifier;
+
+    /// Template class for literal types.
+    class Literal;
+
+    // Abstract methods.
+    virtual ~Expr() = default;
+    virtual Type type() const = 0;
+};
 
 class Expr::Ternary : public Expr {
 private:
@@ -58,12 +67,10 @@ public:
         return *m_op_2;
     }
 
-    void print(std::ostream& stream) const override;
+    Type type() const override {
+        return Type::Ternary;
+    }
 };
-
-inline void Expr::Ternary::print(std::ostream& stream) const { 
-    stream << "(" << argument_1() << " " << operator_1().lexeme() << " "  << argument_2() << " " << operator_2().lexeme() << " " << argument_3() << ')';
-}
 
 class Expr::Binary : public Expr {
 private:
@@ -87,12 +94,10 @@ public:
         return *m_right;
     }
 
-    void print(std::ostream& stream) const override;
+    Type type() const override {
+        return Type::Binary;
+    }
 };
-
-inline void Expr::Binary::print(std::ostream& stream) const { 
-    stream << "(" << left() << " " << operator_().lexeme() << " "  << right() << ')';
-}
 
 class Expr::Unary : public Expr {
 private:
@@ -111,40 +116,50 @@ public:
         return *m_operator;
     }
 
-    void print(std::ostream& stream) const override;
+    Type type() const override {
+        return Type::Unary;
+    }
 };
 
-inline void Expr::Unary::print(std::ostream& stream) const {
-    stream << "(" << operator_().lexeme() << " " << operand() << ')';
-}
+class Expr::Literal : public Expr {
+public:
+    template <typename T>
+    class Typed;
+
+public:
+    virtual Type type() const override {
+        return Type::Literal;
+    }
+
+    virtual std::string to_lexeme() const = 0;
+};
 
 template <typename T>
-class Expr::Literal : public Expr {
+class Expr::Literal::Typed : public Expr::Literal {
 private:
     T m_value;
 
 public:
-    Literal(const T& value) : m_value(value) {}
+    Typed(const T& value) : m_value(value) {}
 
     const T& value() const {
         return m_value;
     }
 
-    void print(std::ostream& stream) const override;
+    std::string to_lexeme() const override {
+        auto stream = std::stringstream();
+        stream << value();
+        return stream.str();
+    }
 };
 
-template <typename T>
-inline void Expr::Literal<T>::print(std::ostream& stream) const { 
-    stream << value();
-}
+class Expr::Identifier : public Expr::Literal::Typed<std::string> {
+public:
+    using Expr::Literal::Typed<std::string>::Typed;
 
-template <>
-inline void Expr::Literal<bool>::print(std::ostream& stream) const {
-    stream << (value() ? "true" : "false");
-}
-
-class Expr::Identifier : public Expr::Literal<std::string> {
-    using Expr::Literal<std::string>::Literal;
+    Type type() const override {
+        return Type::Identifier;
+    }
 };
 
 class Parser {
@@ -237,8 +252,52 @@ public:
     AstPrinter(std::ostream& stream) : m_stream(stream) {}
 
     void print(const Expr& root) {
-        root.print(m_stream);
-        std::cout << '\n';
+        print_impl(root);
+        m_stream << '\n';
+    }
+    
+private:
+    void print_impl(const Expr& root) {
+        switch (root.type()) {
+            case Expr::Type::Unary: print_unary(dynamic_cast<const Expr::Unary&>(root)); break;
+            case Expr::Type::Binary: print_binary(dynamic_cast<const Expr::Binary&>(root)); break;
+            case Expr::Type::Ternary: print_ternary(dynamic_cast<const Expr::Ternary&>(root)); break;
+            case Expr::Type::Literal: print_literal(dynamic_cast<const Expr::Literal&>(root)); break;
+            case Expr::Type::Identifier: print_identifier(dynamic_cast<const Expr::Identifier&>(root)); break;
+            default: break;
+        }
+    }
+
+    void print_unary(const Expr::Unary& expr) {
+        m_stream << "(" << expr.operator_().lexeme() << " ";
+        print_impl(expr.operand());
+        m_stream << ')';
+    }
+
+    void print_binary(const Expr::Binary& expr) {
+        m_stream << "(";
+        print_impl(expr.left());
+        m_stream << " " << expr.operator_().lexeme() << " ";
+        print_impl(expr.right());
+        m_stream << ')';
+    }
+
+    void print_ternary(const Expr::Ternary& expr) {
+        m_stream << "(";
+        print_impl(expr.argument_1());
+        m_stream << " " << expr.operator_1().lexeme() << " ";
+        print_impl(expr.argument_2());
+        m_stream << " " << expr.operator_2().lexeme() << " ";
+        print_impl(expr.argument_3());
+        m_stream << ')';
+    }
+
+    void print_identifier(const Expr::Identifier& identifier) {
+        m_stream << identifier.value();
+    }
+
+    void print_literal(const Expr::Literal& number) {
+        m_stream << number.to_lexeme();
     }
 };
 
