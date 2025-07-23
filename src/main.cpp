@@ -7,10 +7,9 @@
 
 static void run(const std::string& source) {
     auto scanner = Scanner(source);
-    auto tokens = scanner.tokenize();
-    for (const auto& token : tokens) {
-        std::cout << *token << '\n';
-    }
+    auto parser = Parser(scanner.tokenize());
+    auto ast = parser.parse();
+    std::cout << *ast << '\n';
 }
 
 static void run_repl() {

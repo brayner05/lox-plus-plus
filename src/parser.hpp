@@ -7,11 +7,17 @@
 
 struct Expr {
     virtual ~Expr() = default;
+    virtual void print(std::ostream& stream) const = 0;
     class Binary;
     class Unary;
     template <typename T>
     class Literal;
 };
+
+inline std::ostream& operator<<(std::ostream& stream, const Expr& expr) { 
+    expr.print(stream);
+    return stream; 
+}
 
 class Expr::Binary : public Expr {
 private:
@@ -34,7 +40,13 @@ public:
     const Expr& right() const {
         return *m_right;
     }
+
+    void print(std::ostream& stream) const override;
 };
+
+inline void Expr::Binary::print(std::ostream& stream) const { 
+    stream << "(" << operator_().lexeme() << " " <<left() << " " << right() << ')';
+}
 
 class Expr::Unary : public Expr {
 private:
@@ -52,7 +64,13 @@ public:
     const Token& operator_() const {
         return *m_operator;
     }
+
+    void print(std::ostream& stream) const override;
 };
+
+inline void Expr::Unary::print(std::ostream& stream) const {
+    stream << "(" << operator_().lexeme() << " " << operand() << ')';
+}
 
 template <typename T>
 class Expr::Literal : public Expr {
@@ -62,10 +80,17 @@ private:
 public:
     Literal(const T& value) : m_value(value) {}
 
-    const T& value() {
+    const T& value() const {
         return m_value;
     }
+
+    void print(std::ostream& stream) const override;
 };
+
+template <typename T>
+inline void Expr::Literal<T>::print(std::ostream& stream) const { 
+    stream << value();
+}
 
 class Parser {
 private:
