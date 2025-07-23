@@ -2,6 +2,7 @@
 #define PARSER_HPP
 
 #include <string>
+#include "lox.hpp"
 #include "scanner.hpp"
 
 struct Expr {
@@ -80,7 +81,7 @@ public:
 
 private:
     bool is_at_end() const {
-        return m_position >= m_tokens.size();
+        return std::size_t(m_position) >= m_tokens.size();
     }
 
     const Token& previous() const {
@@ -99,6 +100,26 @@ private:
     bool check(TokenType type) const {
         if (is_at_end()) return false;
         return peek().type() == type;
+    }
+
+    bool match(std::initializer_list<TokenType> types) {
+        for (const auto type : types) {
+            if (check(type)) {
+                advance();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    Token consume(TokenType type, const std::string& message) {
+        if (check(type)) return advance();
+        throw error(peek(), message);
+    }
+
+    std::runtime_error error(const Token& token, const std::string& message) {
+        lox::error(token, message);
+        return std::runtime_error("");
     }
 
     std::unique_ptr<Expr> equality();

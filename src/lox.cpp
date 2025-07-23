@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include "scanner.hpp"
 #include "lox.hpp"
 
 namespace lox {
@@ -16,5 +17,13 @@ namespace lox {
     void error(int line, const std::string& message) {
         report(line, "", message);
         had_error_ = true;
+    }
+
+    void error(const Token& token, const std::string& message) {
+        if (token.type() == TokenType::Eof) {
+            report(token.line(), " at end", message);
+        } else {
+            report(token.line(), " at '" + token.lexeme() + "'", message);
+        }
     }
 }
