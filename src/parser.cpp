@@ -154,7 +154,7 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<Expr::Literal::Typed<bool>>(false);
 
     if (match({ TokenType::Nil }))
-        return std::make_unique<Expr::Literal::Typed<void*>>(nullptr);
+        return std::make_unique<Expr::Literal::Nil>();
 
     if (match({ TokenType::Number }))
         return std::make_unique<Expr::Literal::Typed<float>>(std::stod(previous().lexeme()));

@@ -126,6 +126,8 @@ public:
     template <typename T>
     class Typed;
 
+    class Nil;
+
 public:
     virtual Type type() const override {
         return Type::Literal;
@@ -150,6 +152,18 @@ public:
         auto stream = std::stringstream();
         stream << value();
         return stream.str();
+    }
+};
+
+template <>
+inline std::string Expr::Literal::Typed<bool>::to_lexeme() const {
+    return value() ? "true" : "false";
+}
+
+class Expr::Literal::Nil : public Expr::Literal {
+public:
+    std::string to_lexeme() const override {
+        return "nil";
     }
 };
 
