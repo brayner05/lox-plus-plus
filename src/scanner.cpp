@@ -71,6 +71,8 @@ void Scanner::scan_token() {
         case ',': add_token(TokenType::Comma); break;
         case ';': add_token(TokenType::Semicolon); break;
         case '.': add_token(TokenType::Dot); break;
+        case '?': add_token(TokenType::QuestionMark); break;
+        case ':': add_token(TokenType::Colon); break;
 
         case '+': add_token(TokenType::Plus); break;
         case '-': add_token(TokenType::Minus); break;

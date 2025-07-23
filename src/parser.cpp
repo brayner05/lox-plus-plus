@@ -3,7 +3,28 @@
 #include "lox.hpp"
 
 std::unique_ptr<Expr> Parser::expr() {
-    return equality();
+    return ternary();
+}
+
+std::unique_ptr<Expr> Parser::ternary() {
+    auto condition = equality();
+    if (!match({ TokenType::QuestionMark })) return condition;
+
+    auto operator_1 = previous();
+
+    auto success = expr();
+    consume(TokenType::Colon, "Expected ':'.");
+
+    auto operator_2 = previous();
+
+    auto failure = expr();
+    return std::make_unique<Expr::Ternary>(
+        std::move(condition),
+        std::make_unique<Token>(operator_1),
+        std::move(success),
+        std::make_unique<Token>(operator_2),
+        std::move(failure)
+    );
 }
 
 std::unique_ptr<Expr> Parser::equality() {
@@ -118,7 +139,7 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<Expr::Identifier>(previous().lexeme());
 
     if (match({ TokenType::LeftParen })) {
-        auto expression = equality();
+        auto expression = expr();
         consume(TokenType::RightParen, "Expected ')' after expression.");
         return expression;
     }

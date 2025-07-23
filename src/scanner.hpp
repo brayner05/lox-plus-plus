@@ -10,6 +10,7 @@
 enum class TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
     Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
+    QuestionMark, Colon,
   
     Bang, BangEqual,
     Equal, EqualEqual,
@@ -37,6 +38,8 @@ inline std::ostream& operator<<(std::ostream& os, TokenType type) {
         case TokenType::Semicolon:    return os << "Semicolon";
         case TokenType::Slash:        return os << "Slash";
         case TokenType::Star:         return os << "Star";
+        case TokenType::QuestionMark: return os << "QuestionMark";
+        case TokenType::Colon:        return os << "Colon";
 
         case TokenType::Bang:         return os << "Bang";
         case TokenType::BangEqual:    return os << "BangEqual";

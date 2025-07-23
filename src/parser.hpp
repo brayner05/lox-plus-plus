@@ -8,6 +8,7 @@
 struct Expr {
     virtual ~Expr() = default;
     virtual void print(std::ostream& stream) const = 0;
+    class Ternary;
     class Binary;
     class Unary;
     template <typename T>
@@ -18,6 +19,50 @@ struct Expr {
 inline std::ostream& operator<<(std::ostream& stream, const Expr& expr) { 
     expr.print(stream);
     return stream; 
+}
+
+class Expr::Ternary : public Expr {
+private:
+    std::unique_ptr<Expr> m_arg_1;
+    std::unique_ptr<Token> m_op_1;
+    std::unique_ptr<Expr> m_arg_2;
+    std::unique_ptr<Token> m_op_2;
+    std::unique_ptr<Expr> m_arg_3;
+
+public:
+    Ternary(
+        std::unique_ptr<Expr> arg_1, 
+        std::unique_ptr<Token> op_1, 
+        std::unique_ptr<Expr> arg_2,
+        std::unique_ptr<Token> op_2,
+        std::unique_ptr<Expr> arg_3
+    ) : m_arg_1(std::move(arg_1)), m_op_1(std::move(op_1)), m_arg_2(std::move(arg_2)), m_op_2(std::move(op_2)), m_arg_3(std::move(arg_3)) {}
+
+    const Expr& argument_1() const {
+        return *m_arg_1;
+    }
+
+    const Expr& argument_2() const {
+        return *m_arg_2;
+    }
+
+    const Expr& argument_3() const {
+        return *m_arg_3;
+    }
+
+    const Token& operator_1() const {
+        return *m_op_1;
+    }
+
+    const Token& operator_2() const {
+        return *m_op_2;
+    }
+
+    void print(std::ostream& stream) const override;
+};
+
+inline void Expr::Ternary::print(std::ostream& stream) const { 
+    stream << "(" << argument_1() << " " << operator_1().lexeme() << " "  << argument_2() << " " << operator_2().lexeme() << " " << argument_3() << ')';
 }
 
 class Expr::Binary : public Expr {
@@ -159,6 +204,7 @@ private:
     }
 
     std::unique_ptr<Expr> expr();
+    std::unique_ptr<Expr> ternary();
     std::unique_ptr<Expr> equality();
     std::unique_ptr<Expr> compound_expr();
     std::unique_ptr<Expr> comparison();
