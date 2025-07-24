@@ -7,190 +7,48 @@
 #include "lox.hpp"
 #include "scanner.hpp"
 
-struct Expr {
-    /// Type denoting the type of expression.
-    enum class Type { Ternary, Binary, Unary, Literal, Identifier };
+struct Expr;
 
-    /// Ternary expression.
-    class Ternary;
-
-    /// Binary expression.
-    class Binary;
-
-    /// Unary expression.
-    class Unary;
-
-    /// Identifier expression.
-    class Identifier;
-
-    /// Template class for literal types.
-    class Literal;
-
-    // Abstract methods.
-    virtual ~Expr() = default;
-    virtual Type type() const = 0;
-
-    virtual std::string to_string() const = 0;
-};
-
-class Expr::Ternary : public Expr {
-private:
-    std::unique_ptr<Expr> m_arg_1;
-    std::unique_ptr<Token> m_op_1;
-    std::unique_ptr<Expr> m_arg_2;
-    std::unique_ptr<Token> m_op_2;
-    std::unique_ptr<Expr> m_arg_3;
-
-public:
-    Ternary(
-        std::unique_ptr<Expr> arg_1, 
-        std::unique_ptr<Token> op_1, 
-        std::unique_ptr<Expr> arg_2,
-        std::unique_ptr<Token> op_2,
-        std::unique_ptr<Expr> arg_3
-    ) : m_arg_1(std::move(arg_1)), m_op_1(std::move(op_1)), m_arg_2(std::move(arg_2)), m_op_2(std::move(op_2)), m_arg_3(std::move(arg_3)) {}
-
-    const Expr& argument_1() const {
-        return *m_arg_1;
-    }
-
-    const Expr& argument_2() const {
-        return *m_arg_2;
-    }
-
-    const Expr& argument_3() const {
-        return *m_arg_3;
-    }
-
-    const Token& operator_1() const {
-        return *m_op_1;
-    }
-
-    const Token& operator_2() const {
-        return *m_op_2;
-    }
-
-    Type type() const override {
-        return Type::Ternary;
-    }
-
-    std::string to_string() const override {
-        auto stream = std::stringstream();
-        stream << "(" << m_arg_1->to_string() << " " << m_op_1->lexeme() << " ";
-        stream << m_arg_2->to_string() << " " << m_op_2->lexeme() << " ";
-        stream << m_arg_3->to_string() << ")";
-        return stream.str();
-    }
-};
-
-class Expr::Binary : public Expr {
-private:
-    std::unique_ptr<Expr> m_left;
-    std::unique_ptr<Token> m_operator;
-    std::unique_ptr<Expr> m_right;
-
-public:
-    Binary(std::unique_ptr<Expr> left, std::unique_ptr<Token> operator_, std::unique_ptr<Expr> right)
-        : m_left(std::move(left)), m_operator(std::move(operator_)), m_right(std::move(right)) {}
-
-    const Expr& left() const {
-        return *m_left;
-    }
-
-    const Token& operator_() const {
-        return *m_operator;
-    }
-
-    const Expr& right() const {
-        return *m_right;
-    }
-
-    Type type() const override {
-        return Type::Binary;
-    }
-
-    std::string to_string() const override {
-        auto stream = std::stringstream();
-        stream << "(" << m_left->to_string() << " " << m_operator->lexeme() << " " << m_right->to_string() << ")";
-        return stream.str();
-    }
-};
-
-class Expr::Unary : public Expr {
-private:
-    std::unique_ptr<Token> m_operator;
-    std::unique_ptr<Expr> m_operand;
-
-public:
-    Unary(std::unique_ptr<Token> operator_, std::unique_ptr<Expr> operand)
-        : m_operator(std::move(operator_)), m_operand(std::move(operand)) {}
-
-    const Expr& operand() const {
-        return *m_operand;
-    }
-
-    const Token& operator_() const {
-        return *m_operator;
-    }
-
-    Type type() const override {
-        return Type::Unary;
-    }
-
-    std::string to_string() const override {
-        auto stream = std::stringstream();
-        stream << "(" << m_operator->lexeme() << " " << m_operand->to_string() << ")";
-        return stream.str();
-    }
-};
-
-class Expr::Literal : public Expr {
-public:
-    using Value = std::variant<std::monostate, float, bool, std::string>;
-
-private:
-    Value m_value;
-
-public:
-    template<typename T>
-    Literal(T&& value) : m_value(std::forward<T>(value)) {}
-
-    virtual Type type() const override {
-        return Type::Literal;
-    }
+struct Literal {
+    std::variant<std::monostate, float, bool, std::string> m_value;
 
     template <typename T>
-    T value() const {
-        return std::get<T>(m_value);
-    }
-
-    std::string to_string() const override {
-        return std::visit([](auto&& val) -> std::string {
-            using T = std::decay_t<decltype(val)>;
-            if constexpr (std::is_same_v<T, std::monostate>) return "nil";
-            else if constexpr (std::is_same_v<T, bool>) return val ? "true" : "false";
-            else if constexpr (std::is_same_v<T, std::string>) return val;
-            else return std::to_string(val);
-        }, m_value);
-    }
+    Literal(T&& value) : m_value(std::forward<T>(value)) {}
 };
 
-class Expr::Identifier : public Expr {
-private:
+struct Identifier {
     std::string m_name;
-
-public:
     Identifier(const std::string& name) : m_name(name) {}
+};
 
-    Type type() const override {
-        return Type::Identifier;
-    }
+struct Unary {
+    Token m_operator;
+    std::unique_ptr<Expr> m_argument;
+    Unary(const Token& operation, std::unique_ptr<Expr> argument)
+        : m_operator(operation), m_argument(std::move(argument)) {}
+};
 
-    std::string to_string() const override {
-        auto stream = std::stringstream();
-        stream << m_name;
-        return stream.str();
-    }
+struct Binary {
+    Token m_operator;
+    std::unique_ptr<Expr> m_left;
+    std::unique_ptr<Expr> m_right;
+    Binary(const Token& operation, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right)
+        : m_operator(operation), m_left(std::move(left)), m_right(std::move(right)) {}
+};
+
+struct Ternary {
+    std::unique_ptr<Expr> m_condition;
+    std::unique_ptr<Expr> m_success;
+    std::unique_ptr<Expr> m_failure;
+    Ternary(std::unique_ptr<Expr> condition, std::unique_ptr<Expr> success, std::unique_ptr<Expr> failure)
+        : m_condition(std::move(condition)), m_success(std::move(success)), m_failure(std::move(failure)) {}
+};
+
+struct Expr {
+    std::variant<Literal, Identifier, Unary, Binary, Ternary> m_node;
+
+    template <typename T>
+    Expr(T&& node) : m_node(std::forward<T>(node)) {}
 };
 
 class Parser {

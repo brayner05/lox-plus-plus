@@ -18,12 +18,12 @@ std::unique_ptr<Expr> Parser::ternary() {
     auto operator_2 = previous();
 
     auto failure = expr();
-    return std::make_unique<Expr::Ternary>(
-        std::move(condition),
-        std::make_unique<Token>(operator_1),
-        std::move(success),
-        std::make_unique<Token>(operator_2),
-        std::move(failure)
+    return std::make_unique<Expr>(
+        Ternary {
+            std::move(condition),
+            std::move(success),
+            std::move(failure)
+        }
     );
 }
 
@@ -40,10 +40,12 @@ std::unique_ptr<Expr> Parser::equality() {
     while (match({ TokenType::BangEqual, TokenType::EqualEqual })) {
         auto& operation = previous();
         auto right = validate_compound();
-        left = std::make_unique<Expr::Binary>(
-            std::move(left), 
-            std::make_unique<Token>(operation), 
-            std::move(right)
+        left = std::make_unique<Expr>(
+            Binary {
+                operation,
+                std::move(left), 
+                std::move(right)
+            }
         );
     }
 
@@ -61,10 +63,12 @@ std::unique_ptr<Expr> Parser::compound() {
     while (match({ TokenType::Comma })) {
         auto& operation = previous();
         auto right = validate_comparison();
-        left = std::make_unique<Expr::Binary>(
-            std::move(left), 
-            std::make_unique<Token>(operation), 
-            std::move(right)
+        left = std::make_unique<Expr>(
+            Binary {
+                operation,
+                std::move(left), 
+                std::move(right)
+            }
         );
     }
 
@@ -84,10 +88,12 @@ std::unique_ptr<Expr> Parser::comparison() {
     while (match({ TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual })) {
         auto& operation = previous();
         auto right = term();
-        left = std::make_unique<Expr::Binary>(
-            std::move(left), 
-            std::make_unique<Token>(operation), 
-            std::move(right)
+        left = std::make_unique<Expr>(
+            Binary {
+                operation,
+                std::move(left), 
+                std::move(right)
+            }
         );
     }
 
@@ -105,10 +111,12 @@ std::unique_ptr<Expr> Parser::term() {
     while (match({ TokenType::Plus, TokenType::Minus })) {
         auto& operation = previous();
         auto right = validate_factor();
-        left = std::make_unique<Expr::Binary>(
-            std::move(left), 
-            std::make_unique<Token>(operation), 
-            std::move(right)
+        left = std::make_unique<Expr>(
+            Binary {
+                operation,
+                std::move(left), 
+                std::move(right)
+            }
         );
     }
 
@@ -126,10 +134,12 @@ std::unique_ptr<Expr> Parser::factor() {
     while (match({ TokenType::Star, TokenType::Slash })) {
         auto& operation = previous();
         auto right = unary();
-        left = std::make_unique<Expr::Binary>(
-            std::move(left), 
-            std::make_unique<Token>(operation), 
-            std::move(right)
+        left = std::make_unique<Expr>(
+            Binary {
+                operation,
+                std::move(left), 
+                std::move(right)
+            }
         );
     }
 
@@ -140,7 +150,7 @@ std::unique_ptr<Expr> Parser::unary() {
     if (match({ TokenType::Bang, TokenType::Minus })) {
         auto& operation = previous();
         auto argument = primary();
-        return std::make_unique<Expr::Unary>(std::make_unique<Token>(operation), std::move(argument));
+        return std::make_unique<Expr>(Unary { operation, std::move(argument) });
     }
 
     return primary();
@@ -148,24 +158,24 @@ std::unique_ptr<Expr> Parser::unary() {
 
 std::unique_ptr<Expr> Parser::primary() {
     if (match({ TokenType::True })) 
-        return std::make_unique<Expr::Literal>(true);
+        return std::make_unique<Expr>(Literal { true });
     
     if (match({ TokenType::False }))
-        return std::make_unique<Expr::Literal>(false);
+        return std::make_unique<Expr>(Literal { false });
 
     if (match({ TokenType::Nil }))
-        return std::make_unique<Expr::Literal>(std::monostate {});
+        return std::make_unique<Expr>(Literal { std::monostate {} });
 
     if (match({ TokenType::Number }))
-        return std::make_unique<Expr::Literal>(float(std::stod(previous().lexeme())));
+        return std::make_unique<Expr>(Literal { float(std::stod(previous().lexeme())) });
 
     if (match({ TokenType::String })) {
         auto& lexeme = previous().lexeme();
-        return std::make_unique<Expr::Literal>(lexeme.substr(1, lexeme.length() - 2));
+        return std::make_unique<Expr>(Literal { lexeme.substr(1, lexeme.length() - 2) });
     }
 
     if (match({ TokenType::Identifier }))
-        return std::make_unique<Expr::Identifier>(previous().lexeme());
+        return std::make_unique<Expr>(Identifier { previous().lexeme() });
 
     if (match({ TokenType::LeftParen })) {
         auto expression = expr();
