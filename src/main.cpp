@@ -9,9 +9,7 @@ static void run(const std::string& source) {
     auto scanner = Scanner(source);
     auto parser = Parser(scanner.tokenize());
     auto ast = parser.parse();
-    auto printer = AstPrinter(std::cout);
-    printer.print(*ast);
-    std::cout << '\n';
+    std::cout << ast->to_string() << '\n';
 }
 
 static void run_repl() {

@@ -148,20 +148,20 @@ std::unique_ptr<Expr> Parser::unary() {
 
 std::unique_ptr<Expr> Parser::primary() {
     if (match({ TokenType::True })) 
-        return std::make_unique<Expr::Literal::Typed<bool>>(true);
+        return std::make_unique<Expr::Literal>(true);
     
     if (match({ TokenType::False }))
-        return std::make_unique<Expr::Literal::Typed<bool>>(false);
+        return std::make_unique<Expr::Literal>(false);
 
     if (match({ TokenType::Nil }))
-        return std::make_unique<Expr::Literal::Nil>();
+        return std::make_unique<Expr::Literal>(std::monostate {});
 
     if (match({ TokenType::Number }))
-        return std::make_unique<Expr::Literal::Typed<float>>(std::stod(previous().lexeme()));
+        return std::make_unique<Expr::Literal>(float(std::stod(previous().lexeme())));
 
     if (match({ TokenType::String })) {
         auto& lexeme = previous().lexeme();
-        return std::make_unique<Expr::Literal::Typed<std::string>>(lexeme.substr(1, lexeme.length() - 2));
+        return std::make_unique<Expr::Literal>(lexeme.substr(1, lexeme.length() - 2));
     }
 
     if (match({ TokenType::Identifier }))

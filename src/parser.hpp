@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <variant>
 #include "lox.hpp"
 #include "scanner.hpp"
 
@@ -25,27 +26,11 @@ struct Expr {
     /// Template class for literal types.
     class Literal;
 
-    class Visitor;
-
     // Abstract methods.
     virtual ~Expr() = default;
     virtual Type type() const = 0;
-    virtual void accept(Visitor& visitor) const = 0;
-};
 
-class Expr::Visitor {
-public:
-    virtual void visit_ternary(const Ternary& expr) = 0;
-
-    virtual void visit_binary(const Binary& expr) = 0;
-
-    virtual void visit_unary(const Unary& expr) = 0;
-
-    virtual void visit_literal(const Literal& literal) = 0;
-
-    virtual void visit_identifier(const Identifier& identifier) = 0;
-
-    virtual ~Visitor() = default;
+    virtual std::string to_string() const = 0;
 };
 
 class Expr::Ternary : public Expr {
@@ -89,8 +74,12 @@ public:
         return Type::Ternary;
     }
 
-    void accept(Visitor& visitor) const override {
-        visitor.visit_ternary(*this);
+    std::string to_string() const override {
+        auto stream = std::stringstream();
+        stream << "(" << m_arg_1->to_string() << " " << m_op_1->lexeme() << " ";
+        stream << m_arg_2->to_string() << " " << m_op_2->lexeme() << " ";
+        stream << m_arg_3->to_string() << ")";
+        return stream.str();
     }
 };
 
@@ -120,8 +109,10 @@ public:
         return Type::Binary;
     }
 
-    void accept(Visitor& visitor) const override {
-        visitor.visit_binary(*this);
+    std::string to_string() const override {
+        auto stream = std::stringstream();
+        stream << "(" << m_left->to_string() << " " << m_operator->lexeme() << " " << m_right->to_string() << ")";
+        return stream.str();
     }
 };
 
@@ -146,71 +137,59 @@ public:
         return Type::Unary;
     }
 
-    void accept(Visitor& visitor) const override {
-        visitor.visit_unary(*this);
+    std::string to_string() const override {
+        auto stream = std::stringstream();
+        stream << "(" << m_operator->lexeme() << " " << m_operand->to_string() << ")";
+        return stream.str();
     }
 };
 
 class Expr::Literal : public Expr {
 public:
-    template <typename T>
-    class Typed;
+    using Value = std::variant<std::monostate, float, bool, std::string>;
 
-    class Nil;
+private:
+    Value m_value;
 
 public:
+    template<typename T>
+    Literal(T&& value) : m_value(std::forward<T>(value)) {}
+
     virtual Type type() const override {
         return Type::Literal;
     }
 
-    virtual std::string to_lexeme() const = 0;
+    template <typename T>
+    T value() const {
+        return std::get<T>(m_value);
+    }
 
-    void accept(Visitor& visitor) const override {
-        visitor.visit_literal(*this);
+    std::string to_string() const override {
+        return std::visit([](auto&& val) -> std::string {
+            using T = std::decay_t<decltype(val)>;
+            if constexpr (std::is_same_v<T, std::monostate>) return "nil";
+            else if constexpr (std::is_same_v<T, bool>) return val ? "true" : "false";
+            else if constexpr (std::is_same_v<T, std::string>) return val;
+            else return std::to_string(val);
+        }, m_value);
     }
 };
 
-template <typename T>
-class Expr::Literal::Typed : public Expr::Literal {
+class Expr::Identifier : public Expr {
 private:
-    T m_value;
+    std::string m_name;
 
 public:
-    Typed(const T& value) : m_value(value) {}
-
-    const T& value() const {
-        return m_value;
-    }
-
-    std::string to_lexeme() const override {
-        auto stream = std::stringstream();
-        stream << value();
-        return stream.str();
-    }
-};
-
-template <>
-inline std::string Expr::Literal::Typed<bool>::to_lexeme() const {
-    return value() ? "true" : "false";
-}
-
-class Expr::Literal::Nil : public Expr::Literal {
-public:
-    std::string to_lexeme() const override {
-        return "nil";
-    }
-};
-
-class Expr::Identifier : public Expr::Literal::Typed<std::string> {
-public:
-    using Expr::Literal::Typed<std::string>::Typed;
+    Identifier(const std::string& name) : m_name(name) {}
 
     Type type() const override {
         return Type::Identifier;
     }
 
-    void accept(Visitor& visitor) const override {
-        visitor.visit_identifier(*this);
+    std::string to_string() const override {
+        auto stream = std::stringstream();
+        stream << m_name;
+        return stream.str();
     }
 };
 
@@ -294,51 +273,6 @@ private:
     std::unique_ptr<Expr> unary();
     std::unique_ptr<Expr> primary();
     void synchronize();
-};
-
-class AstPrinter : public Expr::Visitor {
-private:
-    std::ostream& m_stream;
-
-public:
-    AstPrinter(std::ostream& stream) : m_stream(stream) {}
-
-    void print(const Expr& expr) {
-        expr.accept(*this);
-    }
-
-private:
-    void visit_unary(const Expr::Unary& expr) override {
-        m_stream << "(" << expr.operator_().lexeme() << " ";
-        print(expr.operand());
-        m_stream << ')';
-    }
-
-    void visit_binary(const Expr::Binary& expr) override {
-        m_stream << "(";
-        print(expr.left());
-        m_stream << " " << expr.operator_().lexeme() << " ";
-        print(expr.right());
-        m_stream << ')';
-    }
-
-    void visit_ternary(const Expr::Ternary& expr) override {
-        m_stream << "(";
-        print(expr.argument_1());
-        m_stream << " " << expr.operator_1().lexeme() << " ";
-        print(expr.argument_2());
-        m_stream << " " << expr.operator_2().lexeme() << " ";
-        print(expr.argument_3());
-        m_stream << ')';
-    }
-
-    void visit_identifier(const Expr::Identifier& identifier) override {
-        m_stream << identifier.value();
-    }
-
-    void visit_literal(const Expr::Literal& number) override {
-        m_stream << number.to_lexeme();
-    }
 };
 
 #endif
