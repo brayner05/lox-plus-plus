@@ -11,6 +11,7 @@ static void run(const std::string& source) {
     auto ast = parser.parse();
     auto printer = AstPrinter(std::cout);
     printer.print(*ast);
+    std::cout << '\n';
 }
 
 static void run_repl() {

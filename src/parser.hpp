@@ -25,9 +25,27 @@ struct Expr {
     /// Template class for literal types.
     class Literal;
 
+    class Visitor;
+
     // Abstract methods.
     virtual ~Expr() = default;
     virtual Type type() const = 0;
+    virtual void accept(Visitor& visitor) const = 0;
+};
+
+class Expr::Visitor {
+public:
+    virtual void visit_ternary(const Ternary& expr) = 0;
+
+    virtual void visit_binary(const Binary& expr) = 0;
+
+    virtual void visit_unary(const Unary& expr) = 0;
+
+    virtual void visit_literal(const Literal& literal) = 0;
+
+    virtual void visit_identifier(const Identifier& identifier) = 0;
+
+    virtual ~Visitor() = default;
 };
 
 class Expr::Ternary : public Expr {
@@ -70,6 +88,10 @@ public:
     Type type() const override {
         return Type::Ternary;
     }
+
+    void accept(Visitor& visitor) const override {
+        visitor.visit_ternary(*this);
+    }
 };
 
 class Expr::Binary : public Expr {
@@ -97,6 +119,10 @@ public:
     Type type() const override {
         return Type::Binary;
     }
+
+    void accept(Visitor& visitor) const override {
+        visitor.visit_binary(*this);
+    }
 };
 
 class Expr::Unary : public Expr {
@@ -119,6 +145,10 @@ public:
     Type type() const override {
         return Type::Unary;
     }
+
+    void accept(Visitor& visitor) const override {
+        visitor.visit_unary(*this);
+    }
 };
 
 class Expr::Literal : public Expr {
@@ -134,6 +164,10 @@ public:
     }
 
     virtual std::string to_lexeme() const = 0;
+
+    void accept(Visitor& visitor) const override {
+        visitor.visit_literal(*this);
+    }
 };
 
 template <typename T>
@@ -173,6 +207,10 @@ public:
 
     Type type() const override {
         return Type::Identifier;
+    }
+
+    void accept(Visitor& visitor) const override {
+        visitor.visit_identifier(*this);
     }
 };
 
@@ -258,59 +296,47 @@ private:
     void synchronize();
 };
 
-class AstPrinter {
+class AstPrinter : public Expr::Visitor {
 private:
     std::ostream& m_stream;
 
 public:
     AstPrinter(std::ostream& stream) : m_stream(stream) {}
 
-    void print(const Expr& root) {
-        print_impl(root);
-        m_stream << '\n';
+    void print(const Expr& expr) {
+        expr.accept(*this);
     }
-    
+
 private:
-    void print_impl(const Expr& root) {
-        switch (root.type()) {
-            case Expr::Type::Unary: print_unary(dynamic_cast<const Expr::Unary&>(root)); break;
-            case Expr::Type::Binary: print_binary(dynamic_cast<const Expr::Binary&>(root)); break;
-            case Expr::Type::Ternary: print_ternary(dynamic_cast<const Expr::Ternary&>(root)); break;
-            case Expr::Type::Literal: print_literal(dynamic_cast<const Expr::Literal&>(root)); break;
-            case Expr::Type::Identifier: print_identifier(dynamic_cast<const Expr::Identifier&>(root)); break;
-            default: break;
-        }
-    }
-
-    void print_unary(const Expr::Unary& expr) {
+    void visit_unary(const Expr::Unary& expr) override {
         m_stream << "(" << expr.operator_().lexeme() << " ";
-        print_impl(expr.operand());
+        print(expr.operand());
         m_stream << ')';
     }
 
-    void print_binary(const Expr::Binary& expr) {
+    void visit_binary(const Expr::Binary& expr) override {
         m_stream << "(";
-        print_impl(expr.left());
+        print(expr.left());
         m_stream << " " << expr.operator_().lexeme() << " ";
-        print_impl(expr.right());
+        print(expr.right());
         m_stream << ')';
     }
 
-    void print_ternary(const Expr::Ternary& expr) {
+    void visit_ternary(const Expr::Ternary& expr) override {
         m_stream << "(";
-        print_impl(expr.argument_1());
+        print(expr.argument_1());
         m_stream << " " << expr.operator_1().lexeme() << " ";
-        print_impl(expr.argument_2());
+        print(expr.argument_2());
         m_stream << " " << expr.operator_2().lexeme() << " ";
-        print_impl(expr.argument_3());
+        print(expr.argument_3());
         m_stream << ')';
     }
 
-    void print_identifier(const Expr::Identifier& identifier) {
+    void visit_identifier(const Expr::Identifier& identifier) override {
         m_stream << identifier.value();
     }
 
-    void print_literal(const Expr::Literal& number) {
+    void visit_literal(const Expr::Literal& number) override {
         m_stream << number.to_lexeme();
     }
 };
