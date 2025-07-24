@@ -11,9 +11,11 @@ struct Expr;
 
 struct Literal {
     std::variant<std::monostate, float, bool, std::string> m_value;
-
-    template <typename T>
-    Literal(T&& value) : m_value(std::forward<T>(value)) {}
+    Literal(std::monostate value) : m_value(value) {}
+    Literal(float value) : m_value(value) {}
+    Literal(bool value) : m_value(value) {}
+    Literal(const std::string& value) : m_value(value) {}
+    Literal(std::string&& value) : m_value(std::move(value)) {}
 };
 
 struct Identifier {
@@ -46,9 +48,11 @@ struct Ternary {
 
 struct Expr {
     std::variant<Literal, Identifier, Unary, Binary, Ternary> m_node;
-
-    template <typename T>
-    Expr(T&& node) : m_node(std::forward<T>(node)) {}
+    Expr(const Literal& literal) : m_node(literal) {}
+    Expr(const Identifier& identifier) : m_node(identifier) {}
+    Expr(Unary&& unary) : m_node(std::move(unary)) {}
+    Expr(Binary&& binary) : m_node(std::move(binary)) {}
+    Expr(Ternary&& ternary) : m_node(std::move(ternary)) {}
 };
 
 class Parser {
@@ -131,6 +135,68 @@ private:
     std::unique_ptr<Expr> unary();
     std::unique_ptr<Expr> primary();
     void synchronize();
+};
+
+class AstPrinter {
+private:
+    std::ostream& m_stream;
+
+public:
+    AstPrinter(std::ostream& stream) : m_stream(stream) {}
+
+    void print(const Expr& expr) {
+        std::visit([this](auto&& node) {
+            using T = std::decay_t<decltype(node)>;
+            if constexpr (std::is_same_v<T, Literal>) print_literal(node);
+            else if constexpr (std::is_same_v<T, Identifier>) print_identifier(node);
+            else if constexpr (std::is_same_v<T, Unary>) print_unary(node);
+            else if constexpr (std::is_same_v<T, Binary>) print_binary(node);
+            else if constexpr (std::is_same_v<T, Ternary>) print_ternary(node);
+            else 
+                throw std::runtime_error("");
+        }, expr.m_node);
+    }
+
+private:
+    void print_literal(const Literal& literal) {
+        std::visit([this](auto&& value) {
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, std::monostate>) 
+                m_stream << "nil";
+            else if constexpr (std::is_same_v<T, bool>)
+                m_stream << (value ? "true" : "false");
+            else 
+                m_stream << value;
+        }, literal.m_value);
+    }
+
+    void print_identifier(const Identifier& identifier) {
+        m_stream << identifier.m_name;
+    }
+
+    void print_unary(const Unary& expr) {
+        m_stream << "(";
+        print(*expr.m_argument);
+        m_stream << " " << expr.m_operator.lexeme() << ")";
+    }
+
+    void print_binary(const Binary& expr) {
+        m_stream << "(";
+        print(*expr.m_left);
+        m_stream << " " << expr.m_operator.lexeme() << " ";
+        print(*expr.m_right);
+        m_stream << ")";
+    }
+
+    void print_ternary(const Ternary& expr) {
+        m_stream << "(";
+        print(*expr.m_condition);
+        m_stream << " ? ";
+        print(*expr.m_success);
+        m_stream << " : ";
+        print(*expr.m_failure);
+        m_stream << ")";
+    }
 };
 
 #endif
