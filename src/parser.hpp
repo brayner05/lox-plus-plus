@@ -48,11 +48,15 @@ struct Ternary {
 
 struct Expr {
     std::variant<Literal, Identifier, Unary, Binary, Ternary> m_node;
+
     Expr(const Literal& literal) : m_node(literal) {}
     Expr(const Identifier& identifier) : m_node(identifier) {}
     Expr(Unary&& unary) : m_node(std::move(unary)) {}
     Expr(Binary&& binary) : m_node(std::move(binary)) {}
     Expr(Ternary&& ternary) : m_node(std::move(ternary)) {}
+
+    template <typename T>
+    class Visitor;
 };
 
 class Parser {
@@ -137,65 +141,74 @@ private:
     void synchronize();
 };
 
-class AstPrinter {
-private:
-    std::ostream& m_stream;
-
+template <typename R>
+class Expr::Visitor {
 public:
-    AstPrinter(std::ostream& stream) : m_stream(stream) {}
-
-    void print(const Expr& expr) {
-        std::visit([this](auto&& node) {
+    R visit(const Expr& expr) {
+        return std::visit([this](auto&& node) {
             using T = std::decay_t<decltype(node)>;
-            if constexpr (std::is_same_v<T, Literal>) print_literal(node);
-            else if constexpr (std::is_same_v<T, Identifier>) print_identifier(node);
-            else if constexpr (std::is_same_v<T, Unary>) print_unary(node);
-            else if constexpr (std::is_same_v<T, Binary>) print_binary(node);
-            else if constexpr (std::is_same_v<T, Ternary>) print_ternary(node);
+            if constexpr (std::is_same_v<T, Literal>) return visit_literal(node);
+            else if constexpr (std::is_same_v<T, Identifier>) return visit_identifier(node);
+            else if constexpr (std::is_same_v<T, Unary>) return visit_unary(node);
+            else if constexpr (std::is_same_v<T, Binary>) return visit_binary(node);
+            else if constexpr (std::is_same_v<T, Ternary>) return visit_ternary(node);
             else 
                 throw std::runtime_error("");
         }, expr.m_node);
     }
 
 private:
-    void print_literal(const Literal& literal) {
-        std::visit([this](auto&& value) {
+    virtual R visit_literal(const Literal& literal) = 0;
+    virtual R visit_identifier(const Identifier& identifier) = 0;
+    virtual R visit_unary(const Unary& expr) = 0;
+    virtual R visit_binary(const Binary& expr) = 0;
+    virtual R visit_ternary(const Ternary& expr) = 0;
+};
+
+class AstPrinter : public Expr::Visitor<std::string> {
+public:
+    std::string print(const Expr& expr) {
+        return this->visit(expr);
+    }
+
+private:
+    std::string visit_literal(const Literal& literal) override {
+        return std::visit([this](auto&& value) -> std::string {
             using T = std::decay_t<decltype(value)>;
             if constexpr (std::is_same_v<T, std::monostate>) 
-                m_stream << "nil";
+                return "nil";
             else if constexpr (std::is_same_v<T, bool>)
-                m_stream << (value ? "true" : "false");
+                return (value ? "true" : "false");
+            else if constexpr (std::is_same_v<T, std::string>)
+                return value;
             else 
-                m_stream << value;
+                return std::to_string(value);
         }, literal.m_value);
     }
 
-    void print_identifier(const Identifier& identifier) {
-        m_stream << identifier.m_name;
+    std::string visit_identifier(const Identifier& identifier) override {
+        return identifier.m_name;
     }
 
-    void print_unary(const Unary& expr) {
-        m_stream << "(";
-        print(*expr.m_argument);
-        m_stream << " " << expr.m_operator.lexeme() << ")";
+    std::string visit_unary(const Unary& expr) override {
+        auto stream = std::stringstream();
+        stream << "(" << print(*expr.m_argument) << " " << expr.m_operator.lexeme() << ")";
+        return stream.str();
     }
 
-    void print_binary(const Binary& expr) {
-        m_stream << "(";
-        print(*expr.m_left);
-        m_stream << " " << expr.m_operator.lexeme() << " ";
-        print(*expr.m_right);
-        m_stream << ")";
+    std::string visit_binary(const Binary& expr) override {
+        auto stream = std::stringstream();
+        stream << "(" << print(*expr.m_left) << " " << expr.m_operator.lexeme() << " ";
+        stream << print(*expr.m_right) << ")";
+        return stream.str();
     }
 
-    void print_ternary(const Ternary& expr) {
-        m_stream << "(";
-        print(*expr.m_condition);
-        m_stream << " ? ";
-        print(*expr.m_success);
-        m_stream << " : ";
-        print(*expr.m_failure);
-        m_stream << ")";
+    std::string visit_ternary(const Ternary& expr) override {
+        auto stream = std::stringstream();
+        stream << "(" << print(*expr.m_condition) << " ? ";
+        stream << print(*expr.m_success) << " : ";
+        stream << print(*expr.m_failure) << ")";
+        return stream.str();
     }
 };
 
