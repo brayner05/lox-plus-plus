@@ -4,14 +4,29 @@
 #include "lox.hpp"
 #include "scanner.hpp"
 #include "parser.hpp"
+#include "interpreter.hpp"
+
+static constexpr void print_value(auto&& v) {
+    using Type = std::decay_t<decltype(v)>;
+    
+    if constexpr (std::is_empty_v<Type>)
+        std::cout << "nil" << '\n';
+    else if constexpr (std::is_same_v<Type, bool>)
+        std::cout << (v ? "true" : "false") << '\n';
+    else
+        std::cout << v << '\n';
+}
 
 static void run(const std::string& source) {
     auto scanner = Scanner(source);
     auto parser = Parser(scanner.tokenize());
     auto ast = parser.parse();
-    auto printer = AstPrinter();
-    auto str = printer.print(*ast);
-    std::cout << str << '\n';
+    auto interpreter = Interpreter();
+    auto result = interpreter.evaluate(*ast);
+    
+    std::visit([](auto&& v) {
+        print_value(v);
+    }, result);
 }
 
 static void run_repl() {

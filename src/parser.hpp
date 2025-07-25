@@ -9,8 +9,10 @@
 
 struct Expr;
 
+using LoxValue = std::variant<std::monostate, float, bool, std::string>;
+
 struct Literal {
-    std::variant<std::monostate, float, bool, std::string> m_value;
+    LoxValue m_value;
     Literal(std::monostate value) : m_value(value) {}
     Literal(float value) : m_value(value) {}
     Literal(bool value) : m_value(value) {}
