@@ -61,6 +61,33 @@ struct Expr {
     class Visitor;
 };
 
+struct ExprStmt {
+    std::unique_ptr<Expr> m_expr;
+    ExprStmt(std::unique_ptr<Expr> expr) : m_expr(std::move(expr)) {}
+};
+
+struct PrintStmt {
+    std::unique_ptr<Expr> m_expr;
+    PrintStmt(std::unique_ptr<Expr> expr) : m_expr(std::move(expr)) {}
+};
+
+struct Statement {
+    template <typename T>
+    class Visitor;
+
+    std::variant<ExprStmt, PrintStmt> m_stmt;
+    Statement(ExprStmt&& stmt) : m_stmt(std::move(stmt)) {}
+    Statement(PrintStmt&& stmt) : m_stmt(std::move(stmt)) {}
+};
+
+template <typename T>
+class Statement::Visitor {
+public:
+    virtual ~Visitor() = default;
+    virtual T visit_expr_stmt(const ExprStmt& stmt) = 0;
+    virtual T visit_print_stmt(const PrintStmt& stmt) = 0;
+};
+
 class Parser {
 public:
     class ParseError : public std::runtime_error {
@@ -75,17 +102,17 @@ private:
 public:
     Parser(std::vector<std::unique_ptr<Token>> tokens) : m_tokens(std::move(tokens)) {}
 
-    std::unique_ptr<Expr> parse() {
+    std::vector<std::unique_ptr<Statement>> parse() {
         try {
-            return expr();
+            return program();
         } catch (const ParseError& parse_error) {
-            return nullptr;
+            return {};
         }
     }
 
 private:
     bool is_at_end() const {
-        return std::size_t(m_position) >= m_tokens.size();
+        return peek().type() == TokenType::Eof;
     }
 
     const Token& previous() const {
@@ -126,6 +153,10 @@ private:
         return ParseError(message);
     }
 
+    std::vector<std::unique_ptr<Statement>> program();
+    std::unique_ptr<Statement> statement();
+    std::unique_ptr<Statement> expr_statement();
+    std::unique_ptr<Statement> print_statement();
     std::unique_ptr<Expr> expr();
     std::unique_ptr<Expr> ternary();
     std::unique_ptr<Expr> validate_equality();

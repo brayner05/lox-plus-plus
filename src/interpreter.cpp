@@ -1,4 +1,6 @@
+#include <iostream>
 #include "interpreter.hpp"
+#include "lox.hpp"
 
 bool Interpreter::is_truthy(const LoxValue& value) {
     return std::visit([](auto&& v) -> bool {
@@ -14,12 +16,24 @@ bool Interpreter::is_truthy(const LoxValue& value) {
     }, value);
 }
 
+static void check_number_operand(const Token& operation, const LoxValue& operand) {
+    std::visit([&operation](auto&& arg) {
+        using ArgType = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<ArgType, float>) {
+            return;
+        } else {
+            throw lox::RuntimeError(operation, "Expected a number.");
+        }
+    }, operand);
+}
+
 LoxValue Interpreter::visit_unary(const Unary& unary) {
     auto operation = unary.m_operator.type();
     auto argument = evaluate(*unary.m_argument);
 
     switch (operation) {
         case TokenType::Minus: { 
+            check_number_operand(unary.m_operator, argument);
             auto number = std::get<float>(argument);
             return -number;
         }
@@ -32,6 +46,18 @@ LoxValue Interpreter::visit_unary(const Unary& unary) {
             throw std::runtime_error(std::string("Unknown unary operator: ") + unary.m_operator.lexeme());
         }
     }
+}
+
+static void check_number_operands(const Token& operation, const LoxValue& left, const LoxValue& right) {
+    std::visit([&operation](auto&& lv, auto&& rv) {
+        using LType = std::decay_t<decltype(lv)>;
+        using RType = std::decay_t<decltype(rv)>;
+        if constexpr (std::is_same_v<LType, float> && std::is_same_v<RType, float>) {
+            return;
+        } else {
+            throw lox::RuntimeError(operation, std::string("Can't add ") + typeid(LType).name() + " to " + typeid(RType).name() + ".");
+        }
+    }, left, right);
 }
 
 LoxValue Interpreter::attempt_addition(const LoxValue& left, const LoxValue& right) {
@@ -77,7 +103,10 @@ LoxValue Interpreter::visit_binary(const Binary& binary) {
     auto right = evaluate(*binary.m_right);
 
     switch (operation) {
-        case TokenType::Plus: return attempt_addition(left, right);
+        case TokenType::Plus: {
+            check_number_operands(binary.m_operator, left, right);
+            return attempt_addition(left, right);
+        }
 
         case TokenType::Minus: {
             auto left_number = std::get<float>(left);
@@ -126,7 +155,7 @@ LoxValue Interpreter::visit_binary(const Binary& binary) {
         case TokenType::BangEqual: return !is_equal(left, right);
 
         default: {
-            throw std::runtime_error("Unknown binary operator.");
+            throw lox::RuntimeError(binary.m_operator, "Unknown binary operator.");
         }
     }
 }
@@ -137,4 +166,25 @@ LoxValue Interpreter::visit_ternary(const Ternary& ternary) {
         return evaluate(*ternary.m_success);
     else
         return evaluate(*ternary.m_failure);
+}
+
+void Interpreter::visit_expr_stmt(const ExprStmt& stmt) {
+    auto value = evaluate(*stmt.m_expr);
+}
+
+static std::string stringify(const LoxValue& value) {
+    return std::visit([](auto&& v) -> std::string {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_empty_v<T>)
+            return std::string("nil");
+        else if constexpr (std::is_same_v<T, std::string>)
+            return v;
+        else
+            return std::to_string(v);
+    }, value);
+}
+
+void Interpreter::visit_print_stmt(const PrintStmt& stmt) {
+    auto value = evaluate(*stmt.m_expr);
+    std::cout << stringify(value) << '\n';
 }

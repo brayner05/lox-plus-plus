@@ -2,6 +2,41 @@
 #include "parser.hpp"
 #include "lox.hpp"
 
+std::vector<std::unique_ptr<Statement>> Parser::program() {
+    auto statements = std::vector<std::unique_ptr<Statement>>();
+    while (!is_at_end())
+        statements.push_back(statement());
+
+    return statements;
+}
+
+std::unique_ptr<Statement> Parser::statement() {
+    if (match({ TokenType::Print }))
+        return print_statement();
+    else
+        return expr_statement();
+}
+
+std::unique_ptr<Statement> Parser::expr_statement() {
+    auto expression = expr();
+    consume(TokenType::Semicolon, "Expected ';'.");
+    return std::make_unique<Statement>(
+        ExprStmt {
+            std::move(expression)
+        }
+    );
+}
+
+std::unique_ptr<Statement> Parser::print_statement() {
+    auto expression = expr();
+    consume(TokenType::Semicolon, "Expected ';'.");
+    return std::make_unique<Statement>(
+        PrintStmt {
+            std::move(expression)
+        }
+    );
+}
+
 std::unique_ptr<Expr> Parser::expr() {
     return ternary();
 }

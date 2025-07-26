@@ -5,9 +5,14 @@
 
 namespace lox {
     static bool had_error_ = false;
+    static bool had_runtime_error_ = false;
 
     bool had_error() {
         return had_error_;
+    }
+
+    bool had_runtime_error() {
+        return had_runtime_error_;
     }
 
     static void report(int line, const std::string& where, const std::string& message) {
@@ -25,5 +30,9 @@ namespace lox {
         } else {
             report(token.line(), " at '" + token.lexeme() + "'", message);
         }
+    }
+
+    void runtime_error(const RuntimeError& error) {
+        std::cerr << error.what() << "\n";
     }
 }
