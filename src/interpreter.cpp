@@ -200,3 +200,9 @@ void Interpreter::visit_var_decl(const VariableDecl& decl) {
 
     m_environment.define(decl.m_name.lexeme(), initializer);
 }
+
+LoxValue Interpreter::visit_assign(const Assign& assign) {
+    auto value = evaluate(*assign.m_value);
+    m_environment.assign(assign.m_name, value);
+    return value;
+}

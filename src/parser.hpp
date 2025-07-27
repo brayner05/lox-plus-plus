@@ -49,14 +49,22 @@ struct Ternary {
         : m_condition(std::move(condition)), m_success(std::move(success)), m_failure(std::move(failure)) {}
 };
 
+struct Assign {
+    Token m_name;
+    std::unique_ptr<Expr> m_value;
+    Assign(const Token& name, std::unique_ptr<Expr> value)
+        : m_name(name), m_value(std::move(value)) {}
+};
+
 struct Expr {
-    std::variant<Literal, Variable, Unary, Binary, Ternary> m_node;
+    std::variant<Literal, Variable, Unary, Binary, Ternary, Assign> m_node;
 
     Expr(const Literal& literal) : m_node(literal) {}
     Expr(const Variable& identifier) : m_node(identifier) {}
     Expr(Unary&& unary) : m_node(std::move(unary)) {}
     Expr(Binary&& binary) : m_node(std::move(binary)) {}
     Expr(Ternary&& ternary) : m_node(std::move(ternary)) {}
+    Expr(Assign&& assign) : m_node(std::move(assign)) {}
 
     template <typename T>
     class Visitor;
@@ -169,6 +177,7 @@ private:
     std::unique_ptr<Statement> expr_statement();
     std::unique_ptr<Statement> print_statement();
     std::unique_ptr<Expr> expr();
+    std::unique_ptr<Expr> assign();
     std::unique_ptr<Expr> ternary();
     std::unique_ptr<Expr> validate_equality();
     std::unique_ptr<Expr> equality();
@@ -196,6 +205,7 @@ public:
             else if constexpr (std::is_same_v<T, Unary>) return visit_unary(node);
             else if constexpr (std::is_same_v<T, Binary>) return visit_binary(node);
             else if constexpr (std::is_same_v<T, Ternary>) return visit_ternary(node);
+            else if constexpr (std::is_same_v<T, Assign>) return visit_assign(node);
             else 
                 throw std::runtime_error("");
         }, expr.m_node);
@@ -207,6 +217,7 @@ private:
     virtual R visit_unary(const Unary& expr) = 0;
     virtual R visit_binary(const Binary& expr) = 0;
     virtual R visit_ternary(const Ternary& expr) = 0;
+    virtual R visit_assign(const Assign& assign) = 0;
 };
 
 #endif

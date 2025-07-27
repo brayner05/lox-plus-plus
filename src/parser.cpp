@@ -38,7 +38,28 @@ std::unique_ptr<Statement> Parser::print_statement() {
 }
 
 std::unique_ptr<Expr> Parser::expr() {
-    return ternary();
+    return assign();
+}
+
+std::unique_ptr<Expr> Parser::assign() {
+    auto left = ternary();
+
+    if (match({ TokenType::Equal })) {
+        auto equals = previous();
+        auto right = assign();
+        if (std::holds_alternative<Variable>(left->m_node)) {
+            auto name = std::get<Variable>(left->m_node).m_name;
+            return std::make_unique<Expr>(
+                Assign {
+                    name,
+                    std::move(right)
+                }
+            );
+        }
+        error(equals, "Invalid assignment.");
+    }
+
+    return left;
 }
 
 std::unique_ptr<Expr> Parser::ternary() {
