@@ -15,6 +15,14 @@ public:
         m_values[name] = value;
     }
 
+    void assign(const Token& name, const LoxValue& value) {
+        if (m_values.count(name.lexeme()) != 0) {
+            m_values[name.lexeme()] = value;
+            return;
+        }
+        throw lox::RuntimeError(name, "Undefined variable.");
+    }
+
     const LoxValue& get(const Token& name) {
         if (m_values.count(name.lexeme()) != 0) return m_values[name.lexeme()];
         throw lox::RuntimeError(name, "Variable not defined.");
@@ -70,6 +78,7 @@ public:
     LoxValue visit_unary(const Unary& unary) override;
     LoxValue visit_binary(const Binary& binary) override;
     LoxValue visit_ternary(const Ternary& ternary) override;
+    LoxValue visit_assign(const Assign& assign) override;
 };
 
 #endif
