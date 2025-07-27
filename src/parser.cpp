@@ -5,7 +5,7 @@
 std::vector<std::unique_ptr<Statement>> Parser::program() {
     auto statements = std::vector<std::unique_ptr<Statement>>();
     while (!is_at_end())
-        statements.push_back(statement());
+        statements.push_back(declaration());
 
     return statements;
 }
@@ -210,7 +210,7 @@ std::unique_ptr<Expr> Parser::primary() {
     }
 
     if (match({ TokenType::Identifier }))
-        return std::make_unique<Expr>(Identifier { previous().lexeme() });
+        return std::make_unique<Expr>(Variable { previous() });
 
     if (match({ TokenType::LeftParen })) {
         auto expression = expr();
@@ -236,5 +236,31 @@ void Parser::synchronize() {
         }
 
         advance();
+    }
+}
+
+std::unique_ptr<Statement> Parser::variable_decl() {
+    auto name = consume(TokenType::Identifier, "Expected an identifier.");
+
+    std::optional<std::unique_ptr<Expr>> initializer {};
+    if (match({ TokenType::Equal }))
+        initializer = expr();
+
+    consume(TokenType::Semicolon, "Expected ';'.");
+    return std::make_unique<Statement>(
+        VariableDecl {
+            name,
+            std::move(initializer)
+        }
+    );
+}
+
+std::unique_ptr<Statement> Parser::declaration() {
+    try {
+        if (match({ TokenType::Var })) return variable_decl();
+        return statement();
+    } catch(const ParseError& error) {
+        synchronize();
+        return nullptr;
     }
 }

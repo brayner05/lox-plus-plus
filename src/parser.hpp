@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <variant>
+#include <optional>
 #include "lox.hpp"
 #include "scanner.hpp"
 
@@ -20,9 +21,9 @@ struct Literal {
     Literal(std::string&& value) : m_value(std::move(value)) {}
 };
 
-struct Identifier {
-    std::string m_name;
-    Identifier(const std::string& name) : m_name(name) {}
+struct Variable {
+    Token m_name;
+    Variable(const Token& name) : m_name(name) {}
 };
 
 struct Unary {
@@ -49,10 +50,10 @@ struct Ternary {
 };
 
 struct Expr {
-    std::variant<Literal, Identifier, Unary, Binary, Ternary> m_node;
+    std::variant<Literal, Variable, Unary, Binary, Ternary> m_node;
 
     Expr(const Literal& literal) : m_node(literal) {}
-    Expr(const Identifier& identifier) : m_node(identifier) {}
+    Expr(const Variable& identifier) : m_node(identifier) {}
     Expr(Unary&& unary) : m_node(std::move(unary)) {}
     Expr(Binary&& binary) : m_node(std::move(binary)) {}
     Expr(Ternary&& ternary) : m_node(std::move(ternary)) {}
@@ -71,13 +72,21 @@ struct PrintStmt {
     PrintStmt(std::unique_ptr<Expr> expr) : m_expr(std::move(expr)) {}
 };
 
+struct VariableDecl {
+    Token m_name;
+    std::optional<std::unique_ptr<Expr>> m_initializer;
+    VariableDecl(const Token& name, std::optional<std::unique_ptr<Expr>> initializer)
+        : m_name(name), m_initializer(std::move(initializer)) {}
+};
+
 struct Statement {
     template <typename T>
     class Visitor;
 
-    std::variant<ExprStmt, PrintStmt> m_stmt;
+    std::variant<ExprStmt, PrintStmt, VariableDecl> m_stmt;
     Statement(ExprStmt&& stmt) : m_stmt(std::move(stmt)) {}
     Statement(PrintStmt&& stmt) : m_stmt(std::move(stmt)) {}
+    Statement(VariableDecl&& dec) : m_stmt(std::move(dec)) {}
 };
 
 template <typename T>
@@ -154,6 +163,8 @@ private:
     }
 
     std::vector<std::unique_ptr<Statement>> program();
+    std::unique_ptr<Statement> declaration();
+    std::unique_ptr<Statement> variable_decl();
     std::unique_ptr<Statement> statement();
     std::unique_ptr<Statement> expr_statement();
     std::unique_ptr<Statement> print_statement();
@@ -181,7 +192,7 @@ public:
         return std::visit([this](auto&& node) {
             using T = std::decay_t<decltype(node)>;
             if constexpr (std::is_same_v<T, Literal>) return visit_literal(node);
-            else if constexpr (std::is_same_v<T, Identifier>) return visit_identifier(node);
+            else if constexpr (std::is_same_v<T, Variable>) return visit_identifier(node);
             else if constexpr (std::is_same_v<T, Unary>) return visit_unary(node);
             else if constexpr (std::is_same_v<T, Binary>) return visit_binary(node);
             else if constexpr (std::is_same_v<T, Ternary>) return visit_ternary(node);
@@ -192,57 +203,10 @@ public:
 
 private:
     virtual R visit_literal(const Literal& literal) = 0;
-    virtual R visit_identifier(const Identifier& identifier) = 0;
+    virtual R visit_identifier(const Variable& identifier) = 0;
     virtual R visit_unary(const Unary& expr) = 0;
     virtual R visit_binary(const Binary& expr) = 0;
     virtual R visit_ternary(const Ternary& expr) = 0;
-};
-
-class AstPrinter : public Expr::Visitor<std::string> {
-public:
-    std::string print(const Expr& expr) {
-        return this->visit(expr);
-    }
-
-private:
-    std::string visit_literal(const Literal& literal) override {
-        return std::visit([this](auto&& value) -> std::string {
-            using T = std::decay_t<decltype(value)>;
-            if constexpr (std::is_same_v<T, std::monostate>) 
-                return "nil";
-            else if constexpr (std::is_same_v<T, bool>)
-                return (value ? "true" : "false");
-            else if constexpr (std::is_same_v<T, std::string>)
-                return value;
-            else 
-                return std::to_string(value);
-        }, literal.m_value);
-    }
-
-    std::string visit_identifier(const Identifier& identifier) override {
-        return identifier.m_name;
-    }
-
-    std::string visit_unary(const Unary& expr) override {
-        auto stream = std::stringstream();
-        stream << "(" << print(*expr.m_argument) << " " << expr.m_operator.lexeme() << ")";
-        return stream.str();
-    }
-
-    std::string visit_binary(const Binary& expr) override {
-        auto stream = std::stringstream();
-        stream << "(" << print(*expr.m_left) << " " << expr.m_operator.lexeme() << " ";
-        stream << print(*expr.m_right) << ")";
-        return stream.str();
-    }
-
-    std::string visit_ternary(const Ternary& expr) override {
-        auto stream = std::stringstream();
-        stream << "(" << print(*expr.m_condition) << " ? ";
-        stream << print(*expr.m_success) << " : ";
-        stream << print(*expr.m_failure) << ")";
-        return stream.str();
-    }
 };
 
 #endif

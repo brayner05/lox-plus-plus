@@ -1,4 +1,5 @@
 #include <iostream>
+#include <variant>
 #include "interpreter.hpp"
 #include "lox.hpp"
 
@@ -179,6 +180,8 @@ static std::string stringify(const LoxValue& value) {
             return std::string("nil");
         else if constexpr (std::is_same_v<T, std::string>)
             return v;
+        else if constexpr (std::is_same_v<T, bool>)
+            return (v ? "true" : "false");
         else
             return std::to_string(v);
     }, value);
@@ -187,4 +190,13 @@ static std::string stringify(const LoxValue& value) {
 void Interpreter::visit_print_stmt(const PrintStmt& stmt) {
     auto value = evaluate(*stmt.m_expr);
     std::cout << stringify(value) << '\n';
+}
+
+void Interpreter::visit_var_decl(const VariableDecl& decl) {
+    LoxValue initializer { std::monostate{} };
+    
+    if (decl.m_initializer.has_value())
+        initializer = evaluate(*decl.m_initializer.value());
+
+    m_environment.define(decl.m_name.lexeme(), initializer);
 }
