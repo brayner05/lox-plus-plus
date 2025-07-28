@@ -103,15 +103,28 @@ namespace parser {
             : m_statements(std::move(statements)) {}
     };
 
+    struct IfStmt {
+        std::unique_ptr<Expr> m_condition;
+        std::unique_ptr<Statement> m_then_clause;
+        std::optional<std::unique_ptr<Statement>> m_else_clause;
+
+        IfStmt(
+            std::unique_ptr<Expr> condition,
+            std::unique_ptr<Statement> then_clause,
+            std::optional<std::unique_ptr<Statement>> else_clause
+        ) : m_condition(std::move(condition)), m_then_clause(std::move(then_clause)), m_else_clause(std::move(else_clause)) {}
+    };
+
     struct Statement {
         template <typename T>
         class Visitor;
 
-        std::variant<ExprStmt, PrintStmt, VariableDecl, Block> m_stmt;
+        std::variant<ExprStmt, PrintStmt, VariableDecl, Block, IfStmt> m_stmt;
         Statement(ExprStmt&& stmt) : m_stmt(std::move(stmt)) {}
         Statement(PrintStmt&& stmt) : m_stmt(std::move(stmt)) {}
         Statement(VariableDecl&& dec) : m_stmt(std::move(dec)) {}
         Statement(Block&& block) : m_stmt(std::move(block)) {}
+        Statement(IfStmt&& stmt) : m_stmt(std::move(stmt)) {}
     };
 
     template <typename T>
@@ -121,6 +134,7 @@ namespace parser {
         virtual T visit_expr_stmt(const ExprStmt& stmt) = 0;
         virtual T visit_print_stmt(const PrintStmt& stmt) = 0;
         virtual T visit_block_stmt(const Block& block) = 0;
+        virtual T visit_if_stmt(const IfStmt& stmt) = 0;
     };
 
 

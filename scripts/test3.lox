@@ -1,0 +1,14 @@
+var A = 5;
+var B = 2;
+
+if (A - B >= 0) {
+    print "That is the case, yes.";
+} else {
+    print "Unfortunately not, no.";
+}
+
+if (!(A - B >= 0)) {
+    print "That is the case, yes.";
+} else {
+    print "Unfortunately not, no.";
+}

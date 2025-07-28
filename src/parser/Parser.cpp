@@ -18,6 +18,9 @@ std::unique_ptr<Statement> Parser::statement() {
 
     if (match({ TokenType::LeftBrace }))
         return block();
+
+    if (match({ TokenType::If }))
+        return if_stmt();
     
     return expr_statement();
 }
@@ -31,6 +34,25 @@ std::unique_ptr<Statement> Parser::block() {
     return std::make_unique<Statement>(
         Block {
             std::move(statements)
+        }
+    );
+}
+
+std::unique_ptr<Statement> Parser::if_stmt() {
+    consume(TokenType::LeftParen, "Expected '('.");
+    auto condition = expr();
+    consume(TokenType::RightParen, "Expected ')'.");
+    auto then_clause = statement();
+
+    std::optional<std::unique_ptr<Statement>> else_clause {};
+    if (match({ TokenType::Else }))
+        else_clause = statement();
+
+    return std::make_unique<Statement>(
+        IfStmt {
+            std::move(condition),
+            std::move(then_clause),
+            std::move(else_clause)
         }
     );
 }

@@ -31,6 +31,7 @@ namespace interpreter {
         void visit_print_stmt(const parser::PrintStmt& stmt) override;
         void visit_var_decl(const parser::VariableDecl& decl);
         void visit_block_stmt(const parser::Block& block) override;
+        void visit_if_stmt(const parser::IfStmt& stmt) override;
 
         parser::LoxValue evaluate(const parser::Expr& expr) {
             return this->visit(expr);
@@ -45,6 +46,8 @@ namespace interpreter {
                     visit_var_decl(v);
                 else if constexpr (std::is_same_v<T, parser::Block>)
                     visit_block_stmt(v);
+                else if constexpr (std::is_same_v<T, parser::IfStmt>)
+                    visit_if_stmt(v);
                 else
                     visit_expr_stmt(v);
             }, stmt.m_stmt);

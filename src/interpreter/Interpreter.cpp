@@ -21,6 +21,7 @@ using parser::Statement;
 using parser::VariableDecl;
 using parser::Grouping;
 using parser::Block;
+using parser::IfStmt;
 
 bool Interpreter::is_truthy(const LoxValue& value) {
     return std::visit([](auto&& v) -> bool {
@@ -241,4 +242,12 @@ void Interpreter::visit_block_stmt(const Block& block) {
         m_environment = previous;
         throw error;
     }
+}
+
+void Interpreter::visit_if_stmt(const IfStmt& stmt) {
+    auto condition_result = evaluate(*stmt.m_condition);
+    if (is_truthy(condition_result))
+        execute(*stmt.m_then_clause);
+    else if (stmt.m_else_clause.has_value())
+        execute(*stmt.m_else_clause.value());
 }
