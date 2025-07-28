@@ -78,6 +78,8 @@ namespace parser {
         class Visitor;
     };
 
+    struct Statement;
+
     struct ExprStmt {
         std::unique_ptr<Expr> m_expr;
         ExprStmt(std::unique_ptr<Expr> expr) : m_expr(std::move(expr)) {}
@@ -95,14 +97,21 @@ namespace parser {
             : m_name(name), m_initializer(std::move(initializer)) {}
     };
 
+    struct Block {
+        std::vector<std::unique_ptr<Statement>> m_statements;
+        Block(std::vector<std::unique_ptr<Statement>>&& statements)
+            : m_statements(std::move(statements)) {}
+    };
+
     struct Statement {
         template <typename T>
         class Visitor;
 
-        std::variant<ExprStmt, PrintStmt, VariableDecl> m_stmt;
+        std::variant<ExprStmt, PrintStmt, VariableDecl, Block> m_stmt;
         Statement(ExprStmt&& stmt) : m_stmt(std::move(stmt)) {}
         Statement(PrintStmt&& stmt) : m_stmt(std::move(stmt)) {}
         Statement(VariableDecl&& dec) : m_stmt(std::move(dec)) {}
+        Statement(Block&& block) : m_stmt(std::move(block)) {}
     };
 
     template <typename T>
@@ -111,6 +120,7 @@ namespace parser {
         virtual ~Visitor() = default;
         virtual T visit_expr_stmt(const ExprStmt& stmt) = 0;
         virtual T visit_print_stmt(const PrintStmt& stmt) = 0;
+        virtual T visit_block_stmt(const Block& block) = 0;
     };
 
 

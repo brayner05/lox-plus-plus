@@ -11,7 +11,7 @@
 namespace interpreter {
     class Interpreter : parser::Expr::Visitor<parser::LoxValue>, parser::Statement::Visitor<void> {
     private:
-        Environment m_environment {};
+        std::shared_ptr<Environment> m_environment { std::make_shared<Environment>() };
         bool is_truthy(const parser::LoxValue& value);
         bool is_equal(const parser::LoxValue& left, const parser::LoxValue& right);
         parser::LoxValue attempt_addition(const parser::LoxValue& left, const parser::LoxValue& right);
@@ -30,6 +30,7 @@ namespace interpreter {
         void visit_expr_stmt(const parser::ExprStmt& stmt) override;
         void visit_print_stmt(const parser::PrintStmt& stmt) override;
         void visit_var_decl(const parser::VariableDecl& decl);
+        void visit_block_stmt(const parser::Block& block) override;
 
         parser::LoxValue evaluate(const parser::Expr& expr) {
             return this->visit(expr);
@@ -40,8 +41,10 @@ namespace interpreter {
                 using T = std::decay_t<decltype(v)>;
                 if constexpr (std::is_same_v<T, parser::PrintStmt>)
                     visit_print_stmt(v);
-                else if constexpr  (std::is_same_v<T, parser::VariableDecl>)
+                else if constexpr (std::is_same_v<T, parser::VariableDecl>)
                     visit_var_decl(v);
+                else if constexpr (std::is_same_v<T, parser::Block>)
+                    visit_block_stmt(v);
                 else
                     visit_expr_stmt(v);
             }, stmt.m_stmt);
@@ -52,7 +55,7 @@ namespace interpreter {
         }
 
         parser::LoxValue visit_identifier(const parser::Variable& identifier) override {
-            return m_environment.get(identifier.m_name);
+            return m_environment->get(identifier.m_name);
         }
 
         parser::LoxValue visit_unary(const parser::Unary& unary) override;

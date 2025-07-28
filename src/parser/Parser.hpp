@@ -82,6 +82,7 @@ namespace parser {
         std::unique_ptr<Statement> statement();
         std::unique_ptr<Statement> expr_statement();
         std::unique_ptr<Statement> print_statement();
+        std::unique_ptr<Statement> block();
         std::unique_ptr<Expr> expr();
         std::unique_ptr<Expr> assign();
         std::unique_ptr<Expr> ternary();

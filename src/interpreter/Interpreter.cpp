@@ -1,5 +1,6 @@
 #include <iostream>
 #include <variant>
+#include <functional>
 #include "Interpreter.hpp"
 #include "../lox.hpp"
 
@@ -19,6 +20,7 @@ using parser::PrintStmt;
 using parser::Statement;
 using parser::VariableDecl;
 using parser::Grouping;
+using parser::Block;
 
 bool Interpreter::is_truthy(const LoxValue& value) {
     return std::visit([](auto&& v) -> bool {
@@ -215,15 +217,60 @@ void Interpreter::visit_var_decl(const VariableDecl& decl) {
     if (decl.m_initializer.has_value())
         initializer = evaluate(*decl.m_initializer.value());
 
-    m_environment.define(decl.m_name.lexeme(), initializer);
+    m_environment->define(decl.m_name.lexeme(), initializer);
 }
 
 LoxValue Interpreter::visit_assign(const Assign& assign) {
     auto value = evaluate(*assign.m_value);
-    m_environment.assign(assign.m_name, value);
+    m_environment->assign(assign.m_name, value);
     return value;
 }
 
 LoxValue Interpreter::visit_grouping(const Grouping& grouping) {
     return evaluate(*grouping.m_inner_expr);
+}
+
+/// ! TEMPORARY WORKAROUND
+/// ! WILL BE REFACTORED OUT EVENTUALLY.
+class try_finally {
+private:
+    using subroutine = std::function<void()>;
+    subroutine m_try_clause;
+    std::function<void(std::exception&)> m_catch_clause {};
+    subroutine m_finally_clause {};
+
+public:
+    try_finally(subroutine try_clause) : m_try_clause(try_clause) {}
+
+    try_finally& catch_clause(std::function<void(std::exception&)> catch_clause) {
+        m_catch_clause = catch_clause;
+        return *this;
+    }
+
+    void finally_clause(subroutine finally_clause) {
+        m_finally_clause = finally_clause;
+        try {
+            m_try_clause();
+        } catch (std::exception& ex) {
+            m_catch_clause(ex);
+        }
+    }
+
+    ~try_finally() {
+        m_finally_clause();
+    }
+};
+
+void Interpreter::visit_block_stmt(const Block& block) {
+    auto previous = m_environment;
+    try_finally([&]() {
+        m_environment = std::make_shared<Environment>(previous);
+        for (const auto& stmt : block.m_statements)
+            execute(*stmt);
+        m_environment = previous;
+    }).catch_clause([&](std::exception& ex) {
+        throw ex;
+    }).finally_clause([&]() {
+        m_environment = previous;
+    });
 }

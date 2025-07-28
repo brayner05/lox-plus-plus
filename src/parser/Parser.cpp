@@ -15,8 +15,24 @@ std::vector<std::unique_ptr<Statement>> Parser::program() {
 std::unique_ptr<Statement> Parser::statement() {
     if (match({ TokenType::Print }))
         return print_statement();
-    else
-        return expr_statement();
+
+    if (match({ TokenType::LeftBrace }))
+        return block();
+    
+    return expr_statement();
+}
+
+std::unique_ptr<Statement> Parser::block() {
+    auto statements = std::vector<std::unique_ptr<Statement>>();
+    
+    while (!match({ TokenType::RightBrace }))
+        statements.push_back(declaration());
+
+    return std::make_unique<Statement>(
+        Block {
+            std::move(statements)
+        }
+    );
 }
 
 std::unique_ptr<Statement> Parser::expr_statement() {
