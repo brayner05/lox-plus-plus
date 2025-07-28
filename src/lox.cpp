@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include "scanner.hpp"
+#include "scanner/scanner.hpp"
 #include "lox.hpp"
 
 namespace lox {

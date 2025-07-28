@@ -4,7 +4,7 @@
 #include <variant>
 #include <map>
 #include <string>
-#include "parser.hpp"
+#include "../parser/parser.hpp"
 
 class Environment {
 private:

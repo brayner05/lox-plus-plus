@@ -3,8 +3,8 @@
 #include <string>
 #include "lox.hpp"
 #include "scanner.hpp"
-#include "parser.hpp"
-#include "interpreter.hpp"
+#include "parser/parser.hpp"
+#include "interpreter/interpreter.hpp"
 
 static auto interpreter = Interpreter();
 

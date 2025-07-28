@@ -1,7 +1,7 @@
 #include <iostream>
 #include <variant>
 #include "interpreter.hpp"
-#include "lox.hpp"
+#include "../lox.hpp"
 
 bool Interpreter::is_truthy(const LoxValue& value) {
     return std::visit([](auto&& v) -> bool {

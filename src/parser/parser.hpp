@@ -5,8 +5,8 @@
 #include <sstream>
 #include <variant>
 #include <optional>
-#include "lox.hpp"
-#include "scanner.hpp"
+#include "../lox.hpp"
+#include "../scanner/scanner.hpp"
 
 struct Expr;
 

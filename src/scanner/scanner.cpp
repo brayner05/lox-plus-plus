@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 #include "scanner.hpp"
-#include "lox.hpp"
+#include "../lox.hpp"
 
 std::map<std::string, TokenType> Scanner::keywords {
     { "and", TokenType::And },

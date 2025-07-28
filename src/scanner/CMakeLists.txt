@@ -1,0 +1,6 @@
+file(GLOB_RECURSE PARSER_SOURCES CONFIG_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+)
+
+add_library(scanner STATIC ${PARSER_SOURCES})
+target_include_directories(scanner PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

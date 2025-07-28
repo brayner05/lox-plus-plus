@@ -1,6 +1,6 @@
 #include <memory>
 #include "parser.hpp"
-#include "lox.hpp"
+#include "../lox.hpp"
 
 std::vector<std::unique_ptr<Statement>> Parser::program() {
     auto statements = std::vector<std::unique_ptr<Statement>>();
