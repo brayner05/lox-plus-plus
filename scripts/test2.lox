@@ -1,0 +1,23 @@
+var x = 255;
+print x;
+
+var y = (x + 1) / 2;
+print y;
+
+{
+    var x = y;
+    print x;
+
+    var y = 64;
+    print y;
+
+    {
+        var y = x;
+        print y;
+    }
+
+    print y;
+}
+
+print x;
+print y;

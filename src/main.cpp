@@ -35,9 +35,12 @@ static void run_file(const std::string& path) {
     std::ifstream input_file(path);
     std::string line;
 
+    std::string source_code;
     while (std::getline(input_file, line)) {
-        run(line);
+        source_code += line;
     }
+
+    run(source_code);
 
     if (lox::had_error())
         std::exit(65);
