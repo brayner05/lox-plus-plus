@@ -18,6 +18,7 @@ using parser::ExprStmt;
 using parser::PrintStmt;
 using parser::Statement;
 using parser::VariableDecl;
+using parser::Grouping;
 
 bool Interpreter::is_truthy(const LoxValue& value) {
     return std::visit([](auto&& v) -> bool {
@@ -221,4 +222,8 @@ LoxValue Interpreter::visit_assign(const Assign& assign) {
     auto value = evaluate(*assign.m_value);
     m_environment.assign(assign.m_name, value);
     return value;
+}
+
+LoxValue Interpreter::visit_grouping(const Grouping& grouping) {
+    return evaluate(*grouping.m_inner_expr);
 }

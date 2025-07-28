@@ -235,13 +235,20 @@ std::unique_ptr<Expr> Parser::primary() {
     if (match({ TokenType::Identifier }))
         return std::make_unique<Expr>(Variable { previous() });
 
-    if (match({ TokenType::LeftParen })) {
-        auto expression = expr();
-        consume(TokenType::RightParen, "Expected ')' after expression.");
-        return expression;
-    }
+    if (match({ TokenType::LeftParen }))
+        return grouping();
 
     throw error(peek(), "Expected an expression.");
+}
+
+std::unique_ptr<Expr> Parser::grouping() {
+    auto inner = expr();
+    consume(TokenType::RightParen, "Expected ')' after expression.");
+    return std::make_unique<Expr>(
+        Grouping {
+            std::move(inner)
+        }
+    );
 }
 
 void Parser::synchronize() {

@@ -97,6 +97,7 @@ namespace parser {
         std::unique_ptr<Expr> factor();
         std::unique_ptr<Expr> unary();
         std::unique_ptr<Expr> primary();
+        std::unique_ptr<Expr> grouping();
         void synchronize();
     };
 }    

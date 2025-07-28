@@ -59,6 +59,7 @@ namespace interpreter {
         parser::LoxValue visit_binary(const parser::Binary& binary) override;
         parser::LoxValue visit_ternary(const parser::Ternary& ternary) override;
         parser::LoxValue visit_assign(const parser::Assign& assign) override;
+        parser::LoxValue visit_grouping(const parser::Grouping& grouping) override;
     };
 }
 #endif

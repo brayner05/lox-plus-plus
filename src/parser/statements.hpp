@@ -58,8 +58,13 @@ namespace parser {
             : m_name(name), m_value(std::move(value)) {}
     };
 
+    struct Grouping {
+        std::unique_ptr<Expr> m_inner_expr;
+        Grouping(std::unique_ptr<Expr> inner_expr) : m_inner_expr(std::move(inner_expr)) {}
+    };
+
     struct Expr {
-        std::variant<Literal, Variable, Unary, Binary, Ternary, Assign> m_node;
+        std::variant<Literal, Variable, Unary, Binary, Ternary, Assign, Grouping> m_node;
 
         Expr(const Literal& literal) : m_node(literal) {}
         Expr(const Variable& identifier) : m_node(identifier) {}
@@ -67,6 +72,7 @@ namespace parser {
         Expr(Binary&& binary) : m_node(std::move(binary)) {}
         Expr(Ternary&& ternary) : m_node(std::move(ternary)) {}
         Expr(Assign&& assign) : m_node(std::move(assign)) {}
+        Expr(Grouping&& grouping) : m_node(std::move(grouping)) {}
 
         template <typename T>
         class Visitor;
@@ -120,6 +126,7 @@ namespace parser {
                 else if constexpr (std::is_same_v<T, Binary>) return visit_binary(node);
                 else if constexpr (std::is_same_v<T, Ternary>) return visit_ternary(node);
                 else if constexpr (std::is_same_v<T, Assign>) return visit_assign(node);
+                else if constexpr (std::is_same_v<T, Grouping>) return visit_grouping(node);
                 else 
                     throw std::runtime_error("");
             }, expr.m_node);
@@ -132,6 +139,7 @@ namespace parser {
         virtual R visit_binary(const Binary& expr) = 0;
         virtual R visit_ternary(const Ternary& expr) = 0;
         virtual R visit_assign(const Assign& assign) = 0;
+        virtual R visit_grouping(const Grouping& grouping) = 0;
     };
 }
 #endif
