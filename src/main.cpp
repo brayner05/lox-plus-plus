@@ -6,24 +6,17 @@
 #include "parser/Parser.hpp"
 #include "interpreter/Interpreter.hpp"
 
-static auto interpreter = Interpreter();
+using scanner::Scanner;
+using parser::Parser;
+using interpreter::Interpreter;
 
-static constexpr void print_value(auto&& v) {
-    using Type = std::decay_t<decltype(v)>;
-    
-    if constexpr (std::is_empty_v<Type>)
-        std::cout << "nil" << '\n';
-    else if constexpr (std::is_same_v<Type, bool>)
-        std::cout << (v ? "true" : "false") << '\n';
-    else
-        std::cout << v << '\n';
-}
+static auto lox_interpreter = Interpreter();
 
 static void run(const std::string& source) {
     auto scanner = Scanner(source);
     auto parser = Parser(scanner.tokenize());
     auto ast = parser.parse();
-    interpreter.interpret(ast);
+    lox_interpreter.interpret(ast);
 }
 
 static void run_repl() {

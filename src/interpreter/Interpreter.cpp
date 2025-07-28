@@ -3,6 +3,22 @@
 #include "Interpreter.hpp"
 #include "../lox.hpp"
 
+using namespace interpreter;
+
+using scanner::Token;
+using scanner::TokenType;
+using parser::LoxValue;
+using parser::Expr;
+using parser::Literal;
+using parser::Unary;
+using parser::Binary;
+using parser::Ternary;
+using parser::Assign;
+using parser::ExprStmt;
+using parser::PrintStmt;
+using parser::Statement;
+using parser::VariableDecl;
+
 bool Interpreter::is_truthy(const LoxValue& value) {
     return std::visit([](auto&& v) -> bool {
         using ValueType = std::decay_t<decltype(v)>;

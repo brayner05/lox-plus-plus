@@ -5,6 +5,8 @@
 #include "Scanner.hpp"
 #include "../lox.hpp"
 
+using namespace scanner;
+
 std::map<std::string, TokenType> Scanner::keywords {
     { "and", TokenType::And },
     { "class", TokenType::Class },

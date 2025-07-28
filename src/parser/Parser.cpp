@@ -2,6 +2,8 @@
 #include "Parser.hpp"
 #include "../lox.hpp"
 
+using namespace parser;
+
 std::vector<std::unique_ptr<Statement>> Parser::program() {
     auto statements = std::vector<std::unique_ptr<Statement>>();
     while (!is_at_end())

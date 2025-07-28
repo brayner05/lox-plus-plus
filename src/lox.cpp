@@ -3,6 +3,9 @@
 #include "scanner/Token.hpp"
 #include "lox.hpp"
 
+using scanner::Token;
+using scanner::TokenType;
+
 namespace lox {
     static bool had_error_ = false;
     static bool had_runtime_error_ = false;

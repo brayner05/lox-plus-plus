@@ -5,28 +5,29 @@
 #include <string>
 #include "../parser/statements.hpp"
 
-class Environment {
-private:
-    std::map<std::string, LoxValue> m_values {};
+namespace interpreter {
+    class Environment {
+    private:
+        std::map<std::string, parser::LoxValue> m_values {};
 
-public:
-    void define(const std::string& name, const LoxValue& value) {
-        m_values[name] = value;
-    }
-
-    void assign(const Token& name, LoxValue value) {
-        if (m_values.count(name.lexeme()) != 0) {
-            m_values[name.lexeme()] = value;
-            return;
+    public:
+        void define(const std::string& name, const parser::LoxValue& value) {
+            m_values[name] = value;
         }
-        throw lox::RuntimeError(name, "Variable does not exist.");
-    }
 
-    const LoxValue& get(const Token& name) {
-        if (m_values.count(name.lexeme()) != 0) return m_values[name.lexeme()];
-        throw lox::RuntimeError(name, "Variable not defined.");
-    }
-};
-    
+        void assign(const scanner::Token& name, parser::LoxValue value) {
+            if (m_values.count(name.lexeme()) != 0) {
+                m_values[name.lexeme()] = value;
+                return;
+            }
+            throw lox::RuntimeError(name, "Variable does not exist.");
+        }
+
+        const parser::LoxValue& get(const scanner::Token& name) {
+            if (m_values.count(name.lexeme()) != 0) return m_values[name.lexeme()];
+            throw lox::RuntimeError(name, "Variable not defined.");
+        }
+    };
+}
 
 #endif
