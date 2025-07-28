@@ -3,7 +3,7 @@
 
 #include <string>
 #include <stdexcept>
-#include "scanner/scanner.hpp"
+#include "scanner/Token.hpp"
 
 namespace lox {
     void error(int line, const std::string& message);

@@ -2,9 +2,9 @@
 #include <fstream>
 #include <string>
 #include "lox.hpp"
-#include "scanner.hpp"
-#include "parser/parser.hpp"
-#include "interpreter/interpreter.hpp"
+#include "scanner/Scanner.hpp"
+#include "parser/Parser.hpp"
+#include "interpreter/Interpreter.hpp"
 
 static auto interpreter = Interpreter();
 

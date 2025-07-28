@@ -1,6 +1,6 @@
 #include <iostream>
 #include <variant>
-#include "interpreter.hpp"
+#include "Interpreter.hpp"
 #include "../lox.hpp"
 
 bool Interpreter::is_truthy(const LoxValue& value) {

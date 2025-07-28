@@ -4,30 +4,9 @@
 #include <variant>
 #include <map>
 #include <string>
-#include "../parser/parser.hpp"
-
-class Environment {
-private:
-    std::map<std::string, LoxValue> m_values {};
-
-public:
-    void define(const std::string& name, const LoxValue& value) {
-        m_values[name] = value;
-    }
-
-    void assign(const Token& name, LoxValue value) {
-        if (m_values.count(name.lexeme()) != 0) {
-            m_values[name.lexeme()] = value;
-            return;
-        }
-        throw lox::RuntimeError(name, "Variable does not exist.");
-    }
-
-    const LoxValue& get(const Token& name) {
-        if (m_values.count(name.lexeme()) != 0) return m_values[name.lexeme()];
-        throw lox::RuntimeError(name, "Variable not defined.");
-    }
-};
+#include <vector>
+#include "../parser/statements.hpp"
+#include "Environment.hpp"
 
 class Interpreter : Expr::Visitor<LoxValue>, Statement::Visitor<void> {
 private:

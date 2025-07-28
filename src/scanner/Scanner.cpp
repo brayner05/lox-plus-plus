@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 #include <map>
-#include "scanner.hpp"
+#include "Scanner.hpp"
 #include "../lox.hpp"
 
 std::map<std::string, TokenType> Scanner::keywords {

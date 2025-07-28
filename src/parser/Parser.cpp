@@ -1,5 +1,5 @@
 #include <memory>
-#include "parser.hpp"
+#include "Parser.hpp"
 #include "../lox.hpp"
 
 std::vector<std::unique_ptr<Statement>> Parser::program() {
