@@ -6,6 +6,7 @@
 #include <variant>
 #include <optional>
 #include <memory>
+#include <type_traits>
 #include "../lox.hpp"
 #include "../scanner/Token.hpp"
 
@@ -127,21 +128,38 @@ namespace parser {
         Statement(IfStmt&& stmt) : m_stmt(std::move(stmt)) {}
     };
 
-    template <typename T>
+    template <typename R>
     class Statement::Visitor {
     public:
+        R visit_stmt(const Statement& stmt) {
+            return std::visit([this](auto&& v) -> R {
+                using T = std::decay_t<decltype(v)>;
+                if constexpr (std::is_same_v<T, parser::PrintStmt>)
+                    return visit_print_stmt(v);
+                else if constexpr (std::is_same_v<T, parser::VariableDecl>)
+                    return visit_var_decl(v);
+                else if constexpr (std::is_same_v<T, parser::Block>)
+                    return visit_block_stmt(v);
+                else if constexpr (std::is_same_v<T, parser::IfStmt>)
+                    return visit_if_stmt(v);
+                else
+                    return visit_expr_stmt(v);
+            }, stmt.m_stmt);
+        }
+
         virtual ~Visitor() = default;
-        virtual T visit_expr_stmt(const ExprStmt& stmt) = 0;
-        virtual T visit_print_stmt(const PrintStmt& stmt) = 0;
-        virtual T visit_block_stmt(const Block& block) = 0;
-        virtual T visit_if_stmt(const IfStmt& stmt) = 0;
+        virtual R visit_expr_stmt(const ExprStmt& stmt) = 0;
+        virtual R visit_print_stmt(const PrintStmt& stmt) = 0;
+        virtual R visit_block_stmt(const Block& block) = 0;
+        virtual R visit_var_decl(const VariableDecl& decl) = 0;
+        virtual R visit_if_stmt(const IfStmt& stmt) = 0;
     };
 
 
     template <typename R>
     class Expr::Visitor {
     public:
-        R visit(const Expr& expr) {
+        R visit_expr(const Expr& expr) {
             return std::visit([this](auto&& node) {
                 using T = std::decay_t<decltype(node)>;
                 if constexpr (std::is_same_v<T, Literal>) return visit_literal(node);
