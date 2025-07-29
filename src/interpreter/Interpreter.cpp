@@ -48,7 +48,7 @@ static void check_number_operand(const Token& operation, const LoxValue& operand
     }, operand);
 }
 
-LoxValue Interpreter::visit_unary(const Unary& unary) {
+LoxValue Interpreter::visit(const Unary& unary) {
     auto operation = unary.m_operator.type();
     auto argument = evaluate(*unary.m_argument);
 
@@ -118,7 +118,7 @@ bool Interpreter::is_equal(const LoxValue& left, const LoxValue& right) {
     }, left, right);
 }
 
-LoxValue Interpreter::visit_binary(const Binary& binary) {
+LoxValue Interpreter::visit(const Binary& binary) {
     auto operation = binary.m_operator.type();
     auto left = evaluate(*binary.m_left);
     auto right = evaluate(*binary.m_right);
@@ -181,7 +181,7 @@ LoxValue Interpreter::visit_binary(const Binary& binary) {
     }
 }
 
-LoxValue Interpreter::visit_ternary(const Ternary& ternary) {
+LoxValue Interpreter::visit(const Ternary& ternary) {
     auto condition = evaluate(*ternary.m_condition);
     if (is_truthy(condition))
         return evaluate(*ternary.m_success);
@@ -189,7 +189,7 @@ LoxValue Interpreter::visit_ternary(const Ternary& ternary) {
         return evaluate(*ternary.m_failure);
 }
 
-void Interpreter::visit_expr_stmt(const ExprStmt& stmt) {
+void Interpreter::visit(const ExprStmt& stmt) {
     auto value = evaluate(*stmt.m_expr);
 }
 
@@ -207,12 +207,12 @@ static std::string stringify(const LoxValue& value) {
     }, value);
 }
 
-void Interpreter::visit_print_stmt(const PrintStmt& stmt) {
+void Interpreter::visit(const PrintStmt& stmt) {
     auto value = evaluate(*stmt.m_expr);
     std::cout << stringify(value) << '\n';
 }
 
-void Interpreter::visit_var_decl(const VariableDecl& decl) {
+void Interpreter::visit(const VariableDecl& decl) {
     LoxValue initializer { std::monostate{} };
     
     if (decl.m_initializer.has_value())
@@ -221,17 +221,17 @@ void Interpreter::visit_var_decl(const VariableDecl& decl) {
     m_environment->define(decl.m_name.lexeme(), initializer);
 }
 
-LoxValue Interpreter::visit_assign(const Assign& assign) {
+LoxValue Interpreter::visit(const Assign& assign) {
     auto value = evaluate(*assign.m_value);
     m_environment->assign(assign.m_name, value);
     return value;
 }
 
-LoxValue Interpreter::visit_grouping(const Grouping& grouping) {
+LoxValue Interpreter::visit(const Grouping& grouping) {
     return evaluate(*grouping.m_inner_expr);
 }
 
-void Interpreter::visit_block_stmt(const Block& block) {
+void Interpreter::visit(const Block& block) {
     auto previous = m_environment;
     try {
         m_environment = std::make_shared<Environment>(previous);
@@ -244,7 +244,7 @@ void Interpreter::visit_block_stmt(const Block& block) {
     }
 }
 
-void Interpreter::visit_if_stmt(const IfStmt& stmt) {
+void Interpreter::visit(const IfStmt& stmt) {
     auto condition_result = evaluate(*stmt.m_condition);
     if (is_truthy(condition_result))
         execute(*stmt.m_then_clause);

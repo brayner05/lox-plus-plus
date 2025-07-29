@@ -133,26 +133,16 @@ namespace parser {
     public:
         R visit_stmt(const Statement& stmt) {
             return std::visit([this](auto&& v) -> R {
-                using T = std::decay_t<decltype(v)>;
-                if constexpr (std::is_same_v<T, parser::PrintStmt>)
-                    return visit_print_stmt(v);
-                else if constexpr (std::is_same_v<T, parser::VariableDecl>)
-                    return visit_var_decl(v);
-                else if constexpr (std::is_same_v<T, parser::Block>)
-                    return visit_block_stmt(v);
-                else if constexpr (std::is_same_v<T, parser::IfStmt>)
-                    return visit_if_stmt(v);
-                else
-                    return visit_expr_stmt(v);
+                return visit(v);
             }, stmt.m_stmt);
         }
 
         virtual ~Visitor() = default;
-        virtual R visit_expr_stmt(const ExprStmt& stmt) = 0;
-        virtual R visit_print_stmt(const PrintStmt& stmt) = 0;
-        virtual R visit_block_stmt(const Block& block) = 0;
-        virtual R visit_var_decl(const VariableDecl& decl) = 0;
-        virtual R visit_if_stmt(const IfStmt& stmt) = 0;
+        virtual R visit(const ExprStmt& stmt) = 0;
+        virtual R visit(const PrintStmt& stmt) = 0;
+        virtual R visit(const Block& block) = 0;
+        virtual R visit(const VariableDecl& decl) = 0;
+        virtual R visit(const IfStmt& stmt) = 0;
     };
 
 
@@ -160,28 +150,18 @@ namespace parser {
     class Expr::Visitor {
     public:
         R visit_expr(const Expr& expr) {
-            return std::visit([this](auto&& node) {
-                using T = std::decay_t<decltype(node)>;
-                if constexpr (std::is_same_v<T, Literal>) return visit_literal(node);
-                else if constexpr (std::is_same_v<T, Variable>) return visit_identifier(node);
-                else if constexpr (std::is_same_v<T, Unary>) return visit_unary(node);
-                else if constexpr (std::is_same_v<T, Binary>) return visit_binary(node);
-                else if constexpr (std::is_same_v<T, Ternary>) return visit_ternary(node);
-                else if constexpr (std::is_same_v<T, Assign>) return visit_assign(node);
-                else if constexpr (std::is_same_v<T, Grouping>) return visit_grouping(node);
-                else 
-                    throw std::runtime_error("");
+            return std::visit([this](auto&& v) -> R {
+                return visit(v);
             }, expr.m_node);
         }
 
-    private:
-        virtual R visit_literal(const Literal& literal) = 0;
-        virtual R visit_identifier(const Variable& identifier) = 0;
-        virtual R visit_unary(const Unary& expr) = 0;
-        virtual R visit_binary(const Binary& expr) = 0;
-        virtual R visit_ternary(const Ternary& expr) = 0;
-        virtual R visit_assign(const Assign& assign) = 0;
-        virtual R visit_grouping(const Grouping& grouping) = 0;
+        virtual R visit(const Literal& literal) = 0;
+        virtual R visit(const Variable& identifier) = 0;
+        virtual R visit(const Unary& expr) = 0;
+        virtual R visit(const Binary& expr) = 0;
+        virtual R visit(const Ternary& expr) = 0;
+        virtual R visit(const Assign& assign) = 0;
+        virtual R visit(const Grouping& grouping) = 0;
     };
 }
 #endif
