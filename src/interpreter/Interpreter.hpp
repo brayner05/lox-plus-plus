@@ -47,6 +47,7 @@ namespace interpreter {
         parser::LoxValue visit(const parser::Ternary& ternary) override;
         parser::LoxValue visit(const parser::Assign& assign) override;
         parser::LoxValue visit(const parser::Grouping& grouping) override;
+        parser::LoxValue visit(const parser::Logical& logical) override;
 
         parser::LoxValue visit(const parser::Literal& literal) override {
             return literal.m_value;

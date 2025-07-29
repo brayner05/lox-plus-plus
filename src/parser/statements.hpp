@@ -64,8 +64,21 @@ namespace parser {
         Grouping(std::unique_ptr<Expr> inner_expr) : m_inner_expr(std::move(inner_expr)) {}
     };
 
+    struct Logical {
+        std::unique_ptr<Expr> m_left;
+        scanner::Token m_operator;
+        std::unique_ptr<Expr> m_right;
+        
+        Logical(
+            std::unique_ptr<Expr> left,
+            const scanner::Token& token,
+            std::unique_ptr<Expr> right
+        ) : m_left(std::move(left)), m_operator(token), m_right(std::move(right)) {}
+    };
+
     struct Expr {
-        std::variant<Literal, Variable, Unary, Binary, Ternary, Assign, Grouping> m_node;
+        using Variant = std::variant<Literal, Variable, Unary, Binary, Ternary, Assign, Grouping, Logical>;
+        Variant m_node;
 
         template <typename T>
         Expr(T&& expr) : m_node(std::forward<T>(expr)) {}
@@ -155,6 +168,7 @@ namespace parser {
         virtual R visit(const Ternary& expr) = 0;
         virtual R visit(const Assign& assign) = 0;
         virtual R visit(const Grouping& grouping) = 0;
+        virtual R visit(const Logical& logical) = 0;
     };
 }
 #endif

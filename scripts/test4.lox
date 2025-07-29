@@ -1,0 +1,6 @@
+
+print nil or "Hello, World!";
+print nil and "Hello, World!";
+
+var expr = true or false;
+print expr;

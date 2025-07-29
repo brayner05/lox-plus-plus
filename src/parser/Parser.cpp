@@ -103,7 +103,7 @@ std::unique_ptr<Expr> Parser::assign() {
 }
 
 std::unique_ptr<Expr> Parser::ternary() {
-    auto condition = validate_equality();
+    auto condition = logic_or();
     if (!match({ TokenType::QuestionMark })) return condition;
 
     auto operator_1 = previous();
@@ -121,6 +121,42 @@ std::unique_ptr<Expr> Parser::ternary() {
             std::move(failure)
         }
     );
+}
+
+std::unique_ptr<Expr> Parser::logic_or() {
+    auto left = logic_and();
+
+    while (match({ TokenType::Or })) {
+        auto or_token = previous();
+        auto right = logic_and();
+        left = std::make_unique<Expr>(
+            Logical {
+                std::move(left),
+                or_token,
+                std::move(right)
+            }
+        );
+    }
+
+    return left;
+}
+
+std::unique_ptr<Expr> Parser::logic_and() {
+    auto left = equality();
+
+    while (match({ TokenType::And })) {
+        auto and_token = previous();
+        auto right = equality();
+        left = std::make_unique<Expr>(
+            Logical {
+                std::move(left),
+                and_token,
+                std::move(right)
+            }
+        );
+    }
+
+    return left;
 }
 
 std::unique_ptr<Expr> Parser::validate_equality() {

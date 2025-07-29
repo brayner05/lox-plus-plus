@@ -5,23 +5,10 @@
 #include "../lox.hpp"
 
 using namespace interpreter;
+using namespace parser;
 
 using scanner::Token;
 using scanner::TokenType;
-using parser::LoxValue;
-using parser::Expr;
-using parser::Literal;
-using parser::Unary;
-using parser::Binary;
-using parser::Ternary;
-using parser::Assign;
-using parser::ExprStmt;
-using parser::PrintStmt;
-using parser::Statement;
-using parser::VariableDecl;
-using parser::Grouping;
-using parser::Block;
-using parser::IfStmt;
 
 bool Interpreter::is_truthy(const LoxValue& value) {
     return std::visit([](auto&& v) -> bool {
@@ -250,4 +237,17 @@ void Interpreter::visit(const IfStmt& stmt) {
         execute(*stmt.m_then_clause);
     else if (stmt.m_else_clause.has_value())
         execute(*stmt.m_else_clause.value());
+}
+
+parser::LoxValue Interpreter::visit(const Logical& logical) {
+    auto left = evaluate(*logical.m_left);
+    auto op_type = logical.m_operator.type();
+
+    if (op_type == TokenType::Or && is_truthy(left))
+        return left;
+
+    if (op_type == TokenType::And && !is_truthy(left))
+        return left;
+
+    return evaluate(*logical.m_right);
 }
