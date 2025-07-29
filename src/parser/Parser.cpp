@@ -24,7 +24,7 @@ std::unique_ptr<Statement> Parser::statement() {
 
     if (match({ TokenType::While }))
         return while_loop();
-    
+
     return expr_statement();
 }
 

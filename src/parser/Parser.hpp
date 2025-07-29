@@ -86,6 +86,11 @@ namespace parser {
         std::unique_ptr<Statement> print_statement();
         std::unique_ptr<Statement> block();
         std::unique_ptr<Statement> while_loop();
+
+        // Temporarily skipping for loops, because implementing them as syntactic sugar
+        // is a pain with unique_ptr, might be better to create a separate for loop
+        // rule.
+        
         std::unique_ptr<Statement> if_stmt();
         std::unique_ptr<Expr> expr();
         std::unique_ptr<Expr> assign();
