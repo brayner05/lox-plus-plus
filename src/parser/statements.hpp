@@ -67,13 +67,8 @@ namespace parser {
     struct Expr {
         std::variant<Literal, Variable, Unary, Binary, Ternary, Assign, Grouping> m_node;
 
-        Expr(const Literal& literal) : m_node(literal) {}
-        Expr(const Variable& identifier) : m_node(identifier) {}
-        Expr(Unary&& unary) : m_node(std::move(unary)) {}
-        Expr(Binary&& binary) : m_node(std::move(binary)) {}
-        Expr(Ternary&& ternary) : m_node(std::move(ternary)) {}
-        Expr(Assign&& assign) : m_node(std::move(assign)) {}
-        Expr(Grouping&& grouping) : m_node(std::move(grouping)) {}
+        template <typename T>
+        Expr(T&& expr) : m_node(std::forward<T>(expr)) {}
 
         template <typename T>
         class Visitor;
@@ -117,15 +112,13 @@ namespace parser {
     };
 
     struct Statement {
+        std::variant<ExprStmt, PrintStmt, VariableDecl, Block, IfStmt> m_stmt;
+
+        template <typename T>
+        Statement(T&& stmt) : m_stmt(std::forward<T>(stmt)) {}
+
         template <typename T>
         class Visitor;
-
-        std::variant<ExprStmt, PrintStmt, VariableDecl, Block, IfStmt> m_stmt;
-        Statement(ExprStmt&& stmt) : m_stmt(std::move(stmt)) {}
-        Statement(PrintStmt&& stmt) : m_stmt(std::move(stmt)) {}
-        Statement(VariableDecl&& dec) : m_stmt(std::move(dec)) {}
-        Statement(Block&& block) : m_stmt(std::move(block)) {}
-        Statement(IfStmt&& stmt) : m_stmt(std::move(stmt)) {}
     };
 
     template <typename R>
