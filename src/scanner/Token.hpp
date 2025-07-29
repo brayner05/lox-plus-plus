@@ -2,6 +2,7 @@
 #define LOX_TOKEN_HPP
 
 #include <ostream>
+#include "../util_types.hpp"
 
 namespace scanner {
     enum class TokenType {
@@ -77,11 +78,11 @@ namespace scanner {
     class Token {
     private:
         TokenType m_type;
-        int m_line;
+        u64 m_line;
         std::string m_lexeme;
 
     public:
-        Token(TokenType type, int line, const std::string& lexeme)
+        Token(TokenType type, u64 line, const std::string& lexeme)
             : m_type(type), m_line(line), m_lexeme(lexeme) {}
 
         TokenType type() const {

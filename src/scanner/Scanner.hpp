@@ -7,15 +7,16 @@
 #include <memory>
 #include <map>
 #include "Token.hpp"
+#include "../util_types.hpp"
 
 namespace scanner {
     class Scanner {
     private:
         const std::string& m_source;
         std::vector<std::unique_ptr<Token>> m_tokens;
-        int m_line { 0 };
-        int m_current { 0 };
-        int m_start { 0 };
+        u64 m_line { 0 };
+        u64 m_current { 0 };
+        u64 m_start { 0 };
         static std::map<std::string, TokenType> keywords;
 
     public:
@@ -24,7 +25,7 @@ namespace scanner {
 
     private:
         bool is_at_end() const {
-            return std::size_t(m_current) >= m_source.length();
+            return m_current >= m_source.length();
         }
 
         char advance() {

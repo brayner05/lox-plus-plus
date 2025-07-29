@@ -20,7 +20,7 @@ namespace parser {
 
     private:
         std::vector<std::unique_ptr<scanner::Token>> m_tokens;
-        int m_position { 0 };
+        u64 m_position { 0 };
 
     public:
         Parser(std::vector<std::unique_ptr<scanner::Token>> tokens) : m_tokens(std::move(tokens)) {}
