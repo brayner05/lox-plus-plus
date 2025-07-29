@@ -9,6 +9,8 @@
 #include "statements.hpp"
 
 namespace parser {
+    /// @brief Creates an abstract syntax tree from a list of tokens so long as the
+    /// list of tokens forms a valid string in the Lox grammar.
     class Parser {
     public:
         using TokenType = scanner::TokenType;

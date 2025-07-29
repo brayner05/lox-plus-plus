@@ -75,6 +75,9 @@ namespace scanner {
         }
     }
 
+    /// @brief Represents a single unit of code scanned directly from 
+    /// the source code. That is, anything in the source code that has any
+    /// meaning and/or value.
     class Token {
     private:
         TokenType m_type;

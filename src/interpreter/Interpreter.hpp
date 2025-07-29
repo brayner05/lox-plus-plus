@@ -9,6 +9,7 @@
 #include "Environment.hpp"
 
 namespace interpreter {
+    /// @brief Performs a tree walk on a given AST, executing each statement along the way.
     class Interpreter : parser::Expr::Visitor<parser::LoxValue>, parser::Statement::Visitor<void> {
     private:
         std::shared_ptr<Environment> m_environment { std::make_shared<Environment>() };
