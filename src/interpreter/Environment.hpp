@@ -24,6 +24,12 @@ namespace interpreter {
                 m_values[name.lexeme()] = value;
                 return;
             }
+
+            if (m_enclosing != nullptr) {
+                m_enclosing->assign(name, value);
+                return;
+            }
+
             throw lox::RuntimeError(name, "Variable does not exist.");
         }
 

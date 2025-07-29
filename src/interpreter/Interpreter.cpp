@@ -1,6 +1,7 @@
 #include <iostream>
 #include <variant>
 #include <functional>
+#include <cmath>
 #include "Interpreter.hpp"
 #include "../lox.hpp"
 
@@ -189,6 +190,8 @@ static std::string stringify(const LoxValue& value) {
             return v;
         else if constexpr (std::is_same_v<T, bool>)
             return (v ? "true" : "false");
+        else if constexpr (std::is_same_v<T, float>)
+            return std::floor(v) == v ? std::to_string(int(v)) : std::to_string(v);
         else
             return std::to_string(v);
     }, value);
@@ -250,4 +253,9 @@ parser::LoxValue Interpreter::visit(const Logical& logical) {
         return left;
 
     return evaluate(*logical.m_right);
+}
+
+void Interpreter::visit(const WhileLoop& loop) {
+    while (is_truthy(evaluate(*loop.m_condition)))
+        execute(*loop.m_body);
 }

@@ -41,6 +41,7 @@ namespace interpreter {
         void visit(const parser::VariableDecl& decl) override;
         void visit(const parser::Block& block) override;
         void visit(const parser::IfStmt& stmt) override;
+        void visit(const parser::WhileLoop& loop) override;
         
         parser::LoxValue visit(const parser::Unary& unary) override;
         parser::LoxValue visit(const parser::Binary& binary) override;

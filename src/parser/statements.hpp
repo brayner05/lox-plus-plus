@@ -124,8 +124,15 @@ namespace parser {
         ) : m_condition(std::move(condition)), m_then_clause(std::move(then_clause)), m_else_clause(std::move(else_clause)) {}
     };
 
+    struct WhileLoop {
+        std::unique_ptr<Expr> m_condition;
+        std::unique_ptr<Statement> m_body;
+        WhileLoop(std::unique_ptr<Expr> condition, std::unique_ptr<Statement> body) 
+            : m_condition(std::move(condition)), m_body(std::move(body)) {}
+    };
+
     struct Statement {
-        std::variant<ExprStmt, PrintStmt, VariableDecl, Block, IfStmt> m_stmt;
+        std::variant<ExprStmt, PrintStmt, VariableDecl, Block, IfStmt, WhileLoop> m_stmt;
 
         template <typename T>
         Statement(T&& stmt) : m_stmt(std::forward<T>(stmt)) {}
@@ -149,6 +156,7 @@ namespace parser {
         virtual R visit(const Block& block) = 0;
         virtual R visit(const VariableDecl& decl) = 0;
         virtual R visit(const IfStmt& stmt) = 0;
+        virtual R visit(const WhileLoop& loop) = 0;
     };
 
 

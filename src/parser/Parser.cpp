@@ -21,6 +21,9 @@ std::unique_ptr<Statement> Parser::statement() {
 
     if (match({ TokenType::If }))
         return if_stmt();
+
+    if (match({ TokenType::While }))
+        return while_loop();
     
     return expr_statement();
 }
@@ -73,6 +76,21 @@ std::unique_ptr<Statement> Parser::print_statement() {
     return std::make_unique<Statement>(
         PrintStmt {
             std::move(expression)
+        }
+    );
+}
+
+std::unique_ptr<Statement> Parser::while_loop() {
+    consume(TokenType::LeftParen, "Expected '('.");
+    auto condition = expr();
+
+    consume(TokenType::RightParen, "Expected ')'.");
+    auto body = statement();
+    
+    return std::make_unique<Statement>(
+        WhileLoop {
+            std::move(condition),
+            std::move(body)
         }
     );
 }
