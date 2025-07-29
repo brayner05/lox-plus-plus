@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "../scanner/Token.hpp"
 #include "statements.hpp"
+#include "../scanner/Token.hpp"
 
 namespace parser {
     /// @brief Creates an abstract syntax tree from a list of tokens so long as the
