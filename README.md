@@ -21,6 +21,12 @@ loxpp
 
 ## Changes from the Original
 My implementation of Lox contains some features not present in the implementation from the book. Some of these features are from challenges at the end of chapters, and some are just features I thought it would be fun to add. These features are listed below:
+
 ### Ternary Operator
 #### Grammar
 `Ternary → Expr '?' Expr ':' Expr`
+
+### For Loop Implementation
+Instead of considering for loops to be syntactic sugar for while loops,
+I opted to have for loops be a separate kind of AST node, after discovering that using
+`unique_ptr` and `variant` made that a lot more messy and hard to keep track of.
