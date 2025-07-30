@@ -259,3 +259,18 @@ void Interpreter::visit(const WhileLoop& loop) {
     while (is_truthy(evaluate(*loop.m_condition)))
         execute(*loop.m_body);
 }
+
+void Interpreter::visit(const ForLoop& loop) {
+    bool has_initializer = loop.m_initializer.has_value();
+    bool has_condition = loop.m_condition.has_value();
+    bool has_update = loop.m_update.has_value();
+
+    if (has_initializer)
+        execute(*loop.m_initializer.value());
+
+    while (has_condition && is_truthy(evaluate(*loop.m_condition.value()))) {
+        execute(*loop.m_body);
+        if (has_update)
+            evaluate(*loop.m_update.value());
+    }
+}

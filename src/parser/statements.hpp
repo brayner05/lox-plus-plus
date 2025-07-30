@@ -131,8 +131,25 @@ namespace parser {
             : m_condition(std::move(condition)), m_body(std::move(body)) {}
     };
 
+    struct ForLoop {
+        std::optional<std::unique_ptr<Statement>> m_initializer;
+        std::optional<std::unique_ptr<Expr>> m_condition;
+        std::optional<std::unique_ptr<Expr>> m_update;
+        std::unique_ptr<Statement> m_body;
+        ForLoop(
+            std::optional<std::unique_ptr<Statement>> initializer,
+            std::optional<std::unique_ptr<Expr>> condition, 
+            std::optional<std::unique_ptr<Expr>> update,
+            std::unique_ptr<Statement> body
+        ) : m_initializer(std::move(initializer)),
+            m_condition(std::move(condition)), 
+            m_update(std::move(update)),
+            m_body(std::move(body)) {}
+    };
+
     struct Statement {
-        std::variant<ExprStmt, PrintStmt, VariableDecl, Block, IfStmt, WhileLoop> m_stmt;
+        using Variant = std::variant<ExprStmt, PrintStmt, VariableDecl, Block, IfStmt, WhileLoop, ForLoop>;
+        Variant m_stmt;
 
         template <typename T>
         Statement(T&& stmt) : m_stmt(std::forward<T>(stmt)) {}
@@ -157,6 +174,7 @@ namespace parser {
         virtual R visit(const VariableDecl& decl) = 0;
         virtual R visit(const IfStmt& stmt) = 0;
         virtual R visit(const WhileLoop& loop) = 0;
+        virtual R visit(const ForLoop& loop) = 0;
     };
 
 

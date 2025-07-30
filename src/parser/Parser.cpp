@@ -25,6 +25,9 @@ std::unique_ptr<Statement> Parser::statement() {
     if (match({ TokenType::While }))
         return while_loop();
 
+    if (match({ TokenType::For }))
+        return for_loop();
+
     return expr_statement();
 }
 
@@ -95,6 +98,37 @@ std::unique_ptr<Statement> Parser::while_loop() {
     );
 }
 
+std::unique_ptr<Statement> Parser::for_loop() {
+    consume(TokenType::LeftParen, "Expected '('.");
+
+    std::optional<std::unique_ptr<Statement>> initializer;
+    if (match({ TokenType::Semicolon }))
+        initializer = {};
+    else if (match({ TokenType::Var }))
+        initializer = variable_decl();
+    else
+        initializer = expr_statement();
+
+    std::optional<std::unique_ptr<Expr>> condition {};
+    if (!check(TokenType::Semicolon))
+        condition = expr();
+    consume(TokenType::Semicolon, "Expected ';'.");
+
+    std::optional<std::unique_ptr<Expr>> update {};
+    if (!check(TokenType::RightParen ))
+        update = expr();
+    consume(TokenType::RightParen, "Expected ')'.");
+
+    auto body = statement();
+
+    return std::make_unique<Statement>(ForLoop { 
+        std::move(initializer), 
+        std::move(condition), 
+        std::move(update), 
+        std::move(body) 
+    });
+}
+
 std::unique_ptr<Expr> Parser::expr() {
     return assign();
 }
@@ -107,12 +141,10 @@ std::unique_ptr<Expr> Parser::assign() {
         auto right = assign();
         if (std::holds_alternative<Variable>(left->m_node)) {
             auto name = std::get<Variable>(left->m_node).m_name;
-            return std::make_unique<Expr>(
-                Assign {
-                    name,
-                    std::move(right)
-                }
-            );
+            return std::make_unique<Expr>(Assign {
+                name,
+                std::move(right)
+            });
         }
         error(equals, "Invalid assignment.");
     }
@@ -132,13 +164,11 @@ std::unique_ptr<Expr> Parser::ternary() {
     auto operator_2 = previous();
 
     auto failure = expr();
-    return std::make_unique<Expr>(
-        Ternary {
-            std::move(condition),
-            std::move(success),
-            std::move(failure)
-        }
-    );
+    return std::make_unique<Expr>(Ternary {
+        std::move(condition),
+        std::move(success),
+        std::move(failure)
+    });
 }
 
 std::unique_ptr<Expr> Parser::logic_or() {
@@ -147,13 +177,11 @@ std::unique_ptr<Expr> Parser::logic_or() {
     while (match({ TokenType::Or })) {
         auto or_token = previous();
         auto right = logic_and();
-        left = std::make_unique<Expr>(
-            Logical {
-                std::move(left),
-                or_token,
-                std::move(right)
-            }
-        );
+        left = std::make_unique<Expr>(Logical {
+            std::move(left),
+            or_token,
+            std::move(right)
+        });
     }
 
     return left;
@@ -165,13 +193,11 @@ std::unique_ptr<Expr> Parser::logic_and() {
     while (match({ TokenType::And })) {
         auto and_token = previous();
         auto right = equality();
-        left = std::make_unique<Expr>(
-            Logical {
-                std::move(left),
-                and_token,
-                std::move(right)
-            }
-        );
+        left = std::make_unique<Expr>(Logical {
+            std::move(left),
+            and_token,
+            std::move(right)
+        });
     }
 
     return left;
@@ -190,13 +216,11 @@ std::unique_ptr<Expr> Parser::equality() {
     while (match({ TokenType::BangEqual, TokenType::EqualEqual })) {
         auto& operation = previous();
         auto right = validate_compound();
-        left = std::make_unique<Expr>(
-            Binary {
-                operation,
-                std::move(left), 
-                std::move(right)
-            }
-        );
+        left = std::make_unique<Expr>(Binary {
+            operation,
+            std::move(left), 
+            std::move(right)
+        });
     }
 
     return left;
@@ -213,13 +237,11 @@ std::unique_ptr<Expr> Parser::compound() {
     while (match({ TokenType::Comma })) {
         auto& operation = previous();
         auto right = validate_comparison();
-        left = std::make_unique<Expr>(
-            Binary {
-                operation,
-                std::move(left), 
-                std::move(right)
-            }
-        );
+        left = std::make_unique<Expr>(Binary {
+            operation,
+            std::move(left), 
+            std::move(right)
+        });
     }
 
     return left;
@@ -238,13 +260,11 @@ std::unique_ptr<Expr> Parser::comparison() {
     while (match({ TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual })) {
         auto& operation = previous();
         auto right = term();
-        left = std::make_unique<Expr>(
-            Binary {
-                operation,
-                std::move(left), 
-                std::move(right)
-            }
-        );
+        left = std::make_unique<Expr>(Binary {
+            operation,
+            std::move(left), 
+            std::move(right)
+        });
     }
 
     return left;
@@ -261,13 +281,11 @@ std::unique_ptr<Expr> Parser::term() {
     while (match({ TokenType::Plus, TokenType::Minus })) {
         auto& operation = previous();
         auto right = validate_factor();
-        left = std::make_unique<Expr>(
-            Binary {
-                operation,
-                std::move(left), 
-                std::move(right)
-            }
-        );
+        left = std::make_unique<Expr>(Binary {
+            operation,
+            std::move(left), 
+            std::move(right)
+        });
     }
 
     return left;
@@ -284,13 +302,11 @@ std::unique_ptr<Expr> Parser::factor() {
     while (match({ TokenType::Star, TokenType::Slash })) {
         auto& operation = previous();
         auto right = unary();
-        left = std::make_unique<Expr>(
-            Binary {
-                operation,
-                std::move(left), 
-                std::move(right)
-            }
-        );
+        left = std::make_unique<Expr>(Binary {
+            operation,
+            std::move(left), 
+            std::move(right)
+        });
     }
 
     return left;
@@ -336,11 +352,9 @@ std::unique_ptr<Expr> Parser::primary() {
 std::unique_ptr<Expr> Parser::grouping() {
     auto inner = expr();
     consume(TokenType::RightParen, "Expected ')' after expression.");
-    return std::make_unique<Expr>(
-        Grouping {
-            std::move(inner)
-        }
-    );
+    return std::make_unique<Expr>(Grouping {
+        std::move(inner)
+    });
 }
 
 void Parser::synchronize() {
@@ -369,12 +383,10 @@ std::unique_ptr<Statement> Parser::variable_decl() {
         initializer = expr();
 
     consume(TokenType::Semicolon, "Expected ';'.");
-    return std::make_unique<Statement>(
-        VariableDecl {
-            name,
-            std::move(initializer)
-        }
-    );
+    return std::make_unique<Statement>(VariableDecl {
+        name,
+        std::move(initializer)
+    });
 }
 
 std::unique_ptr<Statement> Parser::declaration() {
