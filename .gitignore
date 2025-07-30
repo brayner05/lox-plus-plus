@@ -1,3 +1,4 @@
 bin/
 obj/
 build/
+tests/__pychache__/
